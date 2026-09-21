@@ -1,0 +1,2754 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulado de Farmacologia Clínica</title>
+<meta name="description" content="Simulado interativo de múltipla escolha para Farmacologia Clínica, estilo ENAMED/residência.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cg transform='rotate(45 32 32)'%3E%3Crect x='8' y='20' width='48' height='24' rx='12' fill='%232563eb'/%3E%3Cpath d='M32 20 L32 44' stroke='white' stroke-width='2'/%3E%3Crect x='8' y='20' width='24' height='24' rx='12' fill='%23f43f5e'/%3E%3C/g%3E%3C/svg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          brand: {
+            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
+            800: '#1e40af', 900: '#1e3a8a'
+          }
+        }
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .dot { width: 12px; height: 12px; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 9999px; }
+  .fade-in { animation: fadeIn .25s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .option-btn.struck .opt-text { text-decoration: line-through; opacity: .45; }
+  .option-btn.struck { background-color: rgba(148,163,184,.08); }
+  .toast { animation: toastIn .2s ease-out, toastOut .2s ease-in 2.6s forwards; }
+  @keyframes toastIn { from { opacity:0; transform: translateY(10px);} to {opacity:1; transform: translateY(0);} }
+  @keyframes toastOut { to { opacity:0; transform: translateY(10px);} }
+  .bar-min { min-width: 6px; }
+  .print-hide { }
+  @media print { .print-hide { display: none !important; } }
+</style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors">
+
+<div id="toast-container" class="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 items-end"></div>
+
+<!-- ===================== HEADER ===================== -->
+<header class="border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur sticky top-0 z-40">
+  <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl" aria-hidden="true">💊</span>
+      <div>
+        <h1 class="font-bold text-lg leading-tight">Simulado de Farmacologia Clínica</h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400 leading-tight">Estilo ENAMED / prova de residência</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="btn-export-progress" title="Exportar progresso" class="hidden sm:inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700">
+        ⬇️ Exportar
+      </button>
+      <label title="Importar progresso" class="hidden sm:inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer">
+        ⬆️ Importar
+        <input id="input-import-progress" type="file" accept="application/json" class="hidden">
+      </label>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-4 py-6 pb-28">
+
+  <!-- ===================== HOME ===================== -->
+  <section id="screen-home" class="screen active fade-in">
+
+    <div id="resume-banner" class="hidden mb-6 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/30 dark:border-amber-700 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+      <div>
+        <p class="font-semibold text-amber-800 dark:text-amber-200">⏸️ Você tem um simulado em andamento</p>
+        <p id="resume-banner-text" class="text-sm text-amber-700 dark:text-amber-300"></p>
+      </div>
+      <div class="flex gap-2 shrink-0">
+        <button id="btn-resume" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium">Retomar</button>
+        <button id="btn-discard-resume" class="px-4 py-2 rounded-lg border border-amber-400 text-amber-700 dark:text-amber-200 text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/50">Descartar</button>
+      </div>
+    </div>
+
+    <div class="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 text-white p-6 sm:p-8 mb-6 shadow-lg">
+      <h2 class="text-2xl sm:text-3xl font-bold mb-2">Pronto para o simulado?</h2>
+      <p class="text-brand-100 max-w-2xl text-sm sm:text-base">
+        Questões clínicas comentadas de Farmacologia Clínica, com amostragem balanceada por assunto,
+        embaralhamento de alternativas a cada tentativa e modo de disputa por código de sessão.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+      <div class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 text-center">
+        <p id="stat-total" class="text-2xl font-bold text-brand-600 dark:text-brand-400">0</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Questões no banco</p>
+      </div>
+      <div class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 text-center">
+        <p class="text-2xl font-bold text-brand-600 dark:text-brand-400">4</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Alternativas por questão</p>
+      </div>
+      <div class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 text-center">
+        <p id="stat-commented" class="text-2xl font-bold text-brand-600 dark:text-brand-400">100%</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Gabarito comentado</p>
+      </div>
+      <div class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 text-center">
+        <p id="stat-subjects" class="text-2xl font-bold text-brand-600 dark:text-brand-400">0</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Assuntos cobertos</p>
+      </div>
+    </div>
+
+    <div class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 sm:p-6 mb-6">
+      <h3 class="font-semibold mb-1">📊 Cobertura do banco de questões neste navegador</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Quantas questões você já viu em tentativas anteriores.</p>
+      <div class="mb-4">
+        <div class="flex justify-between text-xs mb-1">
+          <span>Cobertura geral</span>
+          <span id="coverage-overall-label">0 / 0 (0%)</span>
+        </div>
+        <div class="h-2.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+          <div id="coverage-overall-bar" class="h-full bg-brand-500 rounded-full bar-min transition-all" style="width:0%"></div>
+        </div>
+      </div>
+      <div id="coverage-by-subject" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+    </div>
+
+    <form id="form-setup" class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 sm:p-6 space-y-6">
+      <div>
+        <h3 class="font-semibold mb-3">1. Escolha os assuntos</h3>
+        <div class="flex gap-2 mb-2">
+          <button type="button" id="btn-select-all-subjects" class="text-xs px-3 py-1 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700">Marcar todos</button>
+          <button type="button" id="btn-select-none-subjects" class="text-xs px-3 py-1 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700">Desmarcar todos</button>
+        </div>
+        <div id="subjects-list" class="grid sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1 border border-slate-100 dark:border-slate-700 rounded-lg p-3"></div>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-6">
+        <div>
+          <h3 class="font-semibold mb-3">2. Quantidade de questões</h3>
+          <input id="input-qtd" type="number" min="5" value="20" step="1"
+            class="w-full rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Distribuídas proporcionalmente entre os assuntos marcados. Máximo disponível: <span id="qtd-max-label">0</span>.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-3">3. Modo de resolução</h3>
+          <div class="flex gap-3">
+            <label class="flex-1 border border-slate-300 dark:border-slate-600 rounded-lg p-3 cursor-pointer has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 dark:has-[:checked]:bg-brand-900/30">
+              <input type="radio" name="mode" value="exame" class="mr-2" checked> <span class="font-medium">Exame</span>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Só vê o resultado no final.</p>
+            </label>
+            <label class="flex-1 border border-slate-300 dark:border-slate-600 rounded-lg p-3 cursor-pointer has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 dark:has-[:checked]:bg-brand-900/30">
+              <input type="radio" name="mode" value="tutor" class="mr-2"> <span class="font-medium">Tutor</span>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Corrige na hora, com justificativa.</p>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="font-semibold mb-3">4. Código de sessão <span class="font-normal text-xs text-slate-500 dark:text-slate-400">(opcional — para competir com amigos)</span></h3>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input id="input-session-code" type="text" placeholder="ex: turma-cardio-01"
+            class="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <button type="button" id="btn-copy-invite" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm font-medium whitespace-nowrap">
+            🔗 Copiar link de convite
+          </button>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Duas pessoas com o mesmo código recebem exatamente as mesmas questões, na mesma ordem. Desativa a anti-repetição individual.</p>
+      </div>
+
+      <button type="submit" id="btn-start" class="w-full py-3 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-semibold text-lg shadow">
+        Iniciar simulado →
+      </button>
+    </form>
+
+    <div class="grid sm:grid-cols-2 gap-6 mt-6">
+      <div class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold">📈 Histórico de tentativas</h3>
+        </div>
+        <div id="history-summary" class="grid grid-cols-2 gap-3 mb-3 text-center">
+          <div class="rounded-lg bg-slate-50 dark:bg-slate-900 p-2">
+            <p id="history-best" class="text-lg font-bold text-emerald-600 dark:text-emerald-400">–</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Melhor nota</p>
+          </div>
+          <div class="rounded-lg bg-slate-50 dark:bg-slate-900 p-2">
+            <p id="history-avg" class="text-lg font-bold text-brand-600 dark:text-brand-400">–</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Média geral</p>
+          </div>
+        </div>
+        <div id="history-chart" class="flex items-end gap-1 h-20 mb-2"></div>
+        <div id="history-list" class="space-y-1 max-h-40 overflow-y-auto text-xs text-slate-600 dark:text-slate-300"></div>
+        <p id="history-empty" class="text-sm text-slate-400 hidden">Nenhuma tentativa registrada ainda.</p>
+      </div>
+
+      <div class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold">🎯 Pontos fracos</h3>
+        </div>
+        <p id="weak-points-summary" class="text-sm text-slate-600 dark:text-slate-300 mb-3">Você ainda não errou nenhuma questão que continue pendente. 🎉</p>
+        <button id="btn-review-weak" class="hidden w-full py-2 rounded-lg border border-rose-400 text-rose-600 dark:text-rose-300 font-medium hover:bg-rose-50 dark:hover:bg-rose-900/30">
+          Revisar pontos fracos agora
+        </button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ===================== QUIZ ===================== -->
+  <section id="screen-quiz" class="screen fade-in">
+    <div class="flex items-center justify-between mb-3 gap-2">
+      <button id="btn-quit-quiz" class="text-sm px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700">✕ Encerrar</button>
+      <div class="flex-1 mx-3">
+        <div class="h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+          <div id="quiz-progress-bar" class="h-full bg-brand-500 transition-all" style="width:0%"></div>
+        </div>
+      </div>
+      <span id="quiz-progress-label" class="text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">0 / 0</span>
+    </div>
+
+    <div id="quiz-dots" class="flex flex-wrap gap-1.5 mb-4"></div>
+
+    <div class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
+      <div class="flex flex-wrap items-center gap-2 mb-3 text-xs">
+        <span id="q-category" class="px-2 py-1 rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/50 dark:text-brand-300 font-medium"></span>
+        <span id="q-difficulty" class="px-2 py-1 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 font-medium"></span>
+        <span id="q-code" class="px-2 py-1 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400 font-mono"></span>
+        <button id="btn-mark-review" class="ml-auto px-2 py-1 rounded-full border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700" title="Marcar para revisão">🏳️ <span id="mark-label">Marcar</span></button>
+      </div>
+
+      <p id="q-prompt" class="text-base sm:text-lg font-medium mb-5 leading-relaxed"></p>
+
+      <div id="q-options" class="space-y-2.5 mb-4"></div>
+
+      <div id="q-hint-box" class="hidden mb-4 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 p-3 text-sm">
+        <p class="font-semibold text-amber-800 dark:text-amber-200 mb-1">💡 Ponto-chave</p>
+        <p id="q-hint-text" class="text-amber-700 dark:text-amber-300"></p>
+      </div>
+
+      <div id="q-feedback-box" class="hidden mb-4 rounded-lg border p-3 text-sm"></div>
+
+      <div class="flex flex-wrap gap-2">
+        <button id="btn-hint" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-sm hover:bg-slate-100 dark:hover:bg-slate-700">💡 Dica</button>
+        <div class="flex-1"></div>
+        <button id="btn-prev" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-sm hover:bg-slate-100 dark:hover:bg-slate-700">← Anterior</button>
+        <button id="btn-next" class="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium">Próxima →</button>
+        <button id="btn-finish" class="hidden px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium">Finalizar simulado ✓</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTS ===================== -->
+  <section id="screen-results" class="screen fade-in">
+    <div class="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 text-white p-6 sm:p-8 mb-6 text-center shadow-lg">
+      <p class="text-sm uppercase tracking-wide text-brand-100 mb-1">Sua pontuação</p>
+      <p id="result-score" class="text-5xl font-bold mb-1">0%</p>
+      <p id="result-summary-text" class="text-brand-100 text-sm"></p>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 text-center">
+        <p id="result-correct" class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">0</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Acertos</p>
+      </div>
+      <div class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 text-center">
+        <p id="result-wrong" class="text-2xl font-bold text-rose-600 dark:text-rose-400">0</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Erros</p>
+      </div>
+      <div class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 text-center">
+        <p id="result-time-total" class="text-2xl font-bold text-brand-600 dark:text-brand-400">0min</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Tempo total</p>
+      </div>
+      <div class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 text-center">
+        <p id="result-time-avg" class="text-2xl font-bold text-brand-600 dark:text-brand-400">0s</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Tempo médio/questão</p>
+      </div>
+    </div>
+
+    <div class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 sm:p-6 mb-6">
+      <h3 class="font-semibold mb-3">Desempenho por assunto</h3>
+      <div id="result-by-subject" class="space-y-3"></div>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-3 mb-6">
+      <button id="btn-review-all" class="py-3 rounded-lg border border-slate-300 dark:border-slate-600 font-medium hover:bg-slate-100 dark:hover:bg-slate-700">🔍 Revisar tudo em detalhe</button>
+      <button id="btn-retry-wrong" class="py-3 rounded-lg border border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-300 font-medium hover:bg-rose-50 dark:hover:bg-rose-900/30">🔁 Refazer só as erradas</button>
+      <button id="btn-retry-marked" class="py-3 rounded-lg border border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-300 font-medium hover:bg-amber-50 dark:hover:bg-amber-900/30">🏳️ Refazer só as marcadas</button>
+      <button id="btn-retry-weak" class="py-3 rounded-lg border border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-300 font-medium hover:bg-purple-50 dark:hover:bg-purple-900/30">🎯 Foco nos pontos fracos</button>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-3">
+      <button id="btn-export-results-page" class="flex-1 py-3 rounded-lg bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-medium">📄 Exportar resultados (página para impressão)</button>
+      <button id="btn-back-home" class="flex-1 py-3 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium">🏠 Voltar ao início</button>
+    </div>
+  </section>
+
+  <!-- ===================== REVIEW ===================== -->
+  <section id="screen-review" class="screen fade-in">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <h2 class="text-xl font-bold">🔍 Revisão detalhada</h2>
+      <div class="flex gap-2">
+        <button data-filter="all" class="review-filter-btn px-3 py-1.5 rounded-lg text-sm border border-slate-300 dark:border-slate-600 bg-brand-600 text-white">Todas</button>
+        <button data-filter="wrong" class="review-filter-btn px-3 py-1.5 rounded-lg text-sm border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700">Só erradas</button>
+        <button data-filter="marked" class="review-filter-btn px-3 py-1.5 rounded-lg text-sm border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700">Só marcadas</button>
+      </div>
+    </div>
+    <div id="review-list" class="space-y-4"></div>
+    <button id="btn-review-back" class="mt-6 w-full py-3 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium">← Voltar aos resultados</button>
+  </section>
+
+</main>
+
+<!-- ===================== FLOATING BUTTONS ===================== -->
+<button id="btn-dark-mode" title="Alternar modo escuro" class="print-hide fixed bottom-6 left-6 z-40 w-12 h-12 rounded-full bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 shadow-lg flex items-center justify-center text-xl hover:scale-105 transition-transform">🌙</button>
+
+<!-- ===================== RETRY MODAL ===================== -->
+<div id="modal-retry" class="hidden fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-sm w-full shadow-xl">
+    <h3 id="modal-retry-title" class="font-semibold text-lg mb-2">Refazer questões</h3>
+    <p id="modal-retry-desc" class="text-sm text-slate-500 dark:text-slate-400 mb-4"></p>
+    <label class="block text-sm font-medium mb-1">Quantas questões deseja refazer?</label>
+    <input id="modal-retry-qtd" type="number" min="1" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-900 px-3 py-2 mb-4">
+    <div class="flex gap-2">
+      <button id="modal-retry-cancel" class="flex-1 py-2 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700">Cancelar</button>
+      <button id="modal-retry-confirm" class="flex-1 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium">Começar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== IMPORT MODAL ===================== -->
+<div id="modal-import" class="hidden fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-sm w-full shadow-xl">
+    <h3 class="font-semibold text-lg mb-2">Importar progresso</h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Deseja mesclar com o progresso atual ou substituí-lo completamente?</p>
+    <div class="flex gap-2">
+      <button id="modal-import-merge" class="flex-1 py-2 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700">Mesclar</button>
+      <button id="modal-import-replace" class="flex-1 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-medium">Substituir</button>
+    </div>
+    <button id="modal-import-cancel" class="w-full mt-2 py-2 rounded-lg text-sm text-slate-500 hover:underline">Cancelar</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   BANCO DE QUESTOES
+   Substitua o array abaixo pelo banco completo de questoes.
+   ========================================================================= */
+</script>
+<script>
+const QUESTIONS_DATABASE = [
+  {
+    "id": 1,
+    "code": "FCK-001",
+    "category": "Farmacocinetica Clinica",
+    "subcategory": "Absorcao e biodisponibilidade",
+    "difficulty": "Intermediária",
+    "prompt": "Paciente em uso de levotiroxina oral passa a tomar o comprimido junto com sulfato ferroso pela manhã, por recomendação de outro médico. Após 6 semanas, o TSH sobe de forma inesperada. Qual o mecanismo mais provável dessa interação?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "O ferro forma quelato insolúvel com a levotiroxina no trato gastrintestinal, reduzindo sua absorção.",
+        "rationale": "Correto: cátions bi/trivalentes (Fe2+, Ca2+, Al3+) quelam a levotiroxina e diminuem sua biodisponibilidade oral."
+      },
+      {
+        "letter": "B",
+        "text": "O ferro induz o citocromo P450 hepático, acelerando o metabolismo da levotiroxina.",
+        "rationale": "Incorreto: sais de ferro não são indutores enzimáticos relevantes do CYP450."
+      },
+      {
+        "letter": "C",
+        "text": "O ferro desloca a levotiroxina de sua ligação à globulina carreadora de tiroxina.",
+        "rationale": "Incorreto: esse mecanismo ocorre com outras drogas (ex.: salicilatos), não com o ferro elementar."
+      },
+      {
+        "letter": "D",
+        "text": "O ferro aumenta a motilidade intestinal, reduzindo o tempo de contato da levotiroxina com a mucosa.",
+        "rationale": "Incorreto: não é o mecanismo predominante descrito para essa interação clássica."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Levotiroxina deve ser administrada em jejum, separada por pelo menos 4 horas de ferro, cálcio, antiácidos e resinas de troca."
+  },
+  {
+    "id": 2,
+    "code": "FCK-002",
+    "category": "Farmacocinetica Clinica",
+    "subcategory": "Distribuicao e ligacao proteica",
+    "difficulty": "Avançada",
+    "prompt": "Paciente cirrótico com hipoalbuminemia grave recebe fenitoína para profilaxia de crise convulsiva. O nível sérico total de fenitoína está dentro da faixa terapêutica, mas o paciente apresenta nistagmo e ataxia. A explicação mais provável é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Houve erro laboratorial na dosagem do nível sérico.",
+        "rationale": "Incorreto: é mais provável um problema farmacocinético conhecido do que erro laboratorial isolado."
+      },
+      {
+        "letter": "B",
+        "text": "A fração livre de fenitoína está elevada apesar do nível total normal, devido à hipoalbuminemia.",
+        "rationale": "Correto: fenitoína é ~90% ligada à albumina; na hipoalbuminemia a fração livre (ativa) aumenta mesmo com nível total normal, causando toxicidade."
+      },
+      {
+        "letter": "C",
+        "text": "O paciente desenvolveu tolerância reduzida ao fármaco por indução enzimática hepática.",
+        "rationale": "Incorreto: indução enzimática tenderia a reduzir o nível, não a causar toxicidade com nível normal."
+      },
+      {
+        "letter": "D",
+        "text": "A insuficiência hepática aumentou o volume de distribuição, concentrando o fármaco no sistema nervoso central.",
+        "rationale": "Incorreto: o aumento do Vd tende a diluir o fármaco, não a concentrá-lo seletivamente no SNC."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Em hipoalbuminemia, corrigir o nível de fenitoína pela fórmula de Sheiner-Tozer ou dosar a fração livre antes de ajustar a dose."
+  },
+  {
+    "id": 3,
+    "code": "FCK-003",
+    "category": "Farmacocinetica Clinica",
+    "subcategory": "Metabolismo hepatico",
+    "difficulty": "Intermediária",
+    "prompt": "Um paciente inicia rifampicina para tratamento de tuberculose e, duas semanas depois, refere falha contraceptiva com anticoncepcional oral combinado, engravidando. O mecanismo farmacocinético envolvido é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Inibição do CYP3A4 pela rifampicina, aumentando o nível do contraceptivo.",
+        "rationale": "Incorreto: o efeito da rifampicina é oposto ao descrito, e nível aumentado não causaria falha."
+      },
+      {
+        "letter": "B",
+        "text": "Indução potente do CYP3A4 hepático e intestinal, acelerando o metabolismo dos esteroides contraceptivos.",
+        "rationale": "Correto: rifampicina é um indutor enzimático potente, reduzindo a eficácia de contraceptivos hormonais e de vários outros fármacos."
+      },
+      {
+        "letter": "C",
+        "text": "Redução da absorção intestinal do contraceptivo por quelação direta com a rifampicina.",
+        "rationale": "Incorreto: não há formação de quelato relevante entre essas duas moléculas."
+      },
+      {
+        "letter": "D",
+        "text": "Deslocamento do contraceptivo da ligação proteica, aumentando sua depuração renal.",
+        "rationale": "Incorreto: o mecanismo principal é indução enzimática, não deslocamento de ligação proteica."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Indutores enzimáticos potentes (rifampicina, carbamazepina, fenitoína) reduzem a eficácia de contraceptivos hormonais; recomendar método de barreira associado."
+  },
+  {
+    "id": 4,
+    "code": "FCK-004",
+    "category": "Farmacocinetica Clinica",
+    "subcategory": "Eliminacao renal",
+    "difficulty": "Intermediária",
+    "prompt": "Idoso de 82 anos, com clearance de creatinina estimado em 25 mL/min, recebe dose padrão de digoxina para fibrilação atrial. Após 10 dias, apresenta náuseas, xantopsia e extrassístoles ventriculares. A causa mais provável é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Acúmulo do fármaco por redução da depuração renal, já que a digoxina é eliminada predominantemente pelos rins.",
+        "rationale": "Correto: a digoxina tem eliminação renal predominante; na insuficiência renal, a dose deve ser reduzida e o nível monitorado."
+      },
+      {
+        "letter": "B",
+        "text": "Aumento do metabolismo hepático de primeira passagem, elevando metabólitos ativos.",
+        "rationale": "Incorreto: a digoxina sofre pouco metabolismo hepático; a via principal de eliminação é renal, inalterada."
+      },
+      {
+        "letter": "C",
+        "text": "Indução do transportador P-glicoproteína intestinal, aumentando a absorção do fármaco.",
+        "rationale": "Incorreto: indução da P-gp tenderia a reduzir a absorção, não a aumentá-la."
+      },
+      {
+        "letter": "D",
+        "text": "Redução da ligação à albumina plasmática, aumentando a fração ativa livre.",
+        "rationale": "Incorreto: a digoxina tem baixa ligação proteica (~25%); esse não é o mecanismo relevante aqui."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Ajustar a dose de digoxina conforme a função renal e monitorar nível sérico, especialmente em idosos e no uso concomitante de diuréticos."
+  },
+  {
+    "id": 5,
+    "code": "FCK-005",
+    "category": "Farmacocinetica Clinica",
+    "subcategory": "Cinetica de ordem zero",
+    "difficulty": "Avançada",
+    "prompt": "Paciente epiléptico em uso crônico de fenitoína tem a dose aumentada de 300 mg/dia para 400 mg/dia. O nível sérico, que era 12 mcg/mL, sobe para 28 mcg/mL, desproporcionalmente ao aumento de dose. Esse comportamento reflete:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Cinética de primeira ordem, em que a fração eliminada por unidade de tempo é constante.",
+        "rationale": "Incorreto: na cinética de primeira ordem o aumento de nível seria proporcional ao aumento de dose."
+      },
+      {
+        "letter": "B",
+        "text": "Saturação das enzimas hepáticas responsáveis pela metabolização, com transição para cinética de ordem zero.",
+        "rationale": "Correto: a fenitoína satura seu sistema enzimático em doses terapêuticas, e pequenos incrementos de dose podem causar elevações desproporcionais do nível sérico (cinética de ordem zero)."
+      },
+      {
+        "letter": "C",
+        "text": "Aumento da depuração renal compensatória, que paradoxalmente elevou o nível sérico.",
+        "rationale": "Incorreto: aumento de depuração reduziria o nível sérico, não o contrário."
+      },
+      {
+        "letter": "D",
+        "text": "Efeito de primeira passagem hepática reduzido pela nova formulação do comprimido.",
+        "rationale": "Incorreto: não há indicação de troca de formulação no enunciado; o fenômeno é farmacocinético clássico da fenitoína."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Fármacos com cinética de ordem zero (fenitoína, etanol, altas doses de AAS) exigem ajustes de dose pequenos e cautelosos, com monitorização de nível sérico."
+  },
+  {
+    "id": 6,
+    "code": "FCK-006",
+    "category": "Farmacocinetica Clinica",
+    "subcategory": "Meia-vida e estado de equilibrio",
+    "difficulty": "Intermediária",
+    "prompt": "Um novo antiarrítmico tem meia-vida de eliminação de 36 horas. Após iniciar a dose de manutenção sem dose de ataque, em quanto tempo aproximadamente o paciente atingirá o estado de equilíbrio (steady-state) plasmático?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Cerca de 36 horas, equivalente a uma meia-vida.",
+        "rationale": "Incorreto: uma meia-vida atinge apenas 50% do estado de equilíbrio."
+      },
+      {
+        "letter": "B",
+        "text": "Cerca de 180 horas (5 meias-vidas), aproximadamente 7 a 8 dias.",
+        "rationale": "Correto: o estado de equilíbrio é atingido, na prática clínica, após cerca de 4 a 5 meias-vidas, independentemente da dose administrada."
+      },
+      {
+        "letter": "C",
+        "text": "Imediatamente após a primeira dose, pois a meia-vida não influencia o steady-state.",
+        "rationale": "Incorreto: a meia-vida determina diretamente o tempo necessário para atingir o platô plasmático."
+      },
+      {
+        "letter": "D",
+        "text": "Apenas após a suspensão do fármaco, quando os níveis se estabilizam por eliminação completa.",
+        "rationale": "Incorreto: o estado de equilíbrio ocorre durante a administração contínua, não após a suspensão."
+      }
+    ],
+    "correctLetter": "D",
+    "clinicalPointers": "O tempo para atingir o steady-state depende apenas da meia-vida (≈4-5 meias-vidas); a dose de ataque serve para antecipar o efeito terapêutico, não para acelerar o steady-state real."
+  },
+  {
+    "id": 7,
+    "code": "FCK-007",
+    "category": "Farmacocinetica Clinica",
+    "subcategory": "Biodisponibilidade e via de administracao",
+    "difficulty": "Intermediária",
+    "prompt": "Um fármaco tem biodisponibilidade oral de 25% devido a extenso metabolismo de primeira passagem hepática. Para obter o mesmo efeito sistêmico de uma dose intravenosa de 50 mg, a dose oral equivalente aproximada seria:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "50 mg, pois a biodisponibilidade não altera a dose necessária.",
+        "rationale": "Incorreto: biodisponibilidade reduzida exige aumento proporcional da dose oral para igualar a exposição sistêmica."
+      },
+      {
+        "letter": "B",
+        "text": "100 mg, dobrando a dose intravenosa original.",
+        "rationale": "Incorreto: esse cálculo não reflete corretamente a fração de 25% de biodisponibilidade."
+      },
+      {
+        "letter": "C",
+        "text": "200 mg, calculado por dose IV dividida pela fração de biodisponibilidade (50/0,25).",
+        "rationale": "Correto: dose oral = dose IV ÷ F = 50 mg ÷ 0,25 = 200 mg, para atingir exposição sistêmica equivalente."
+      },
+      {
+        "letter": "D",
+        "text": "12,5 mg, calculado multiplicando a dose IV pela fração de biodisponibilidade.",
+        "rationale": "Incorreto: esse cálculo inverte a lógica; multiplicar pela fração resultaria em subdosagem."
+      }
+    ],
+    "correctLetter": "C",
+    "clinicalPointers": "Fármacos com alto efeito de primeira passagem (ex.: propranolol, morfina, nitroglicerina) exigem doses orais muito maiores que as parenterais para efeito equivalente."
+  },
+  {
+    "id": 8,
+    "code": "FCK-008",
+    "category": "Farmacocinetica Clinica",
+    "subcategory": "Polimorfismo genetico e metabolismo",
+    "difficulty": "Avançada",
+    "prompt": "Paciente em uso de codeína para dor pós-operatória apresenta sonolência intensa e depressão respiratória mesmo com dose padrão. Investigação revela que é metabolizador ultrarrápido de CYP2D6. A explicação farmacocinética é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Metabolizadores ultrarrápidos convertem codeína em morfina de forma acelerada e em maior quantidade, elevando o efeito opioide.",
+        "rationale": "Correto: CYP2D6 converte codeína em morfina (metabólito ativo); metabolizadores ultrarrápidos geram níveis excessivos de morfina, mesmo com dose habitual."
+      },
+      {
+        "letter": "B",
+        "text": "Metabolizadores ultrarrápidos eliminam a codeína mais lentamente, acumulando o fármaco original.",
+        "rationale": "Incorreto: o problema não é acúmulo do pró-fármaco, mas conversão acelerada em metabólito ativo."
+      },
+      {
+        "letter": "C",
+        "text": "O polimorfismo de CYP2D6 nesse caso reduz a ligação da codeína aos receptores opioides.",
+        "rationale": "Incorreto: polimorfismos de CYP2D6 afetam a biotransformação, não a afinidade receptor-ligante."
+      },
+      {
+        "letter": "D",
+        "text": "Metabolizadores ultrarrápidos têm menor absorção intestinal de codeína, exigindo doses maiores.",
+        "rationale": "Incorreto: o fenômeno descrito é hepático/metabólico, não relacionado à absorção intestinal."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Codeína e tramadol são pró-fármacos ativados por CYP2D6; polimorfismos ultrarrápidos podem causar toxicidade opioide grave, especialmente em crianças e lactantes."
+  },
+  {
+    "id": 9,
+    "code": "FCK-009",
+    "category": "Farmacocinetica Clinica",
+    "subcategory": "Farmacocinetica em obesidade",
+    "difficulty": "Avançada",
+    "prompt": "Paciente com obesidade grau III necessita de dose de ataque de um aminoglicosídeo, fármaco hidrofílico com baixa penetração no tecido adiposo. Qual peso deve ser utilizado para o cálculo mais adequado da dose de ataque?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Peso corporal total, pois reflete a massa corporal real do paciente.",
+        "rationale": "Incorreto: usar o peso total superestimaria a dose de fármacos hidrofílicos, que não se distribuem bem na gordura."
+      },
+      {
+        "letter": "B",
+        "text": "Peso corporal ideal, sem qualquer ajuste, como em pacientes eutróficos.",
+        "rationale": "Incorreto: ignorar completamente o excesso de peso pode subestimar o volume de distribuição real."
+      },
+      {
+        "letter": "C",
+        "text": "Peso corporal ajustado, somando ao peso ideal uma fração do excesso de peso.",
+        "rationale": "Correto: para fármacos hidrofílicos como aminoglicosídeos, usa-se peso ajustado (peso ideal + fator × excesso de peso) para estimar melhor o volume de distribuição."
+      },
+      {
+        "letter": "D",
+        "text": "Peso corporal magro estimado por bioimpedância, desconsiderando o peso ideal calculado.",
+        "rationale": "Incorreto: embora o peso magro seja usado para outros fármacos, o padrão para aminoglicosídeos é o peso ajustado."
+      }
+    ],
+    "correctLetter": "C",
+    "clinicalPointers": "Fármacos hidrofílicos (aminoglicosídeos, vancomicina) usam peso ajustado ou peso ideal na obesidade; fármacos lipofílicos tendem a usar peso total."
+  },
+  {
+    "id": 10,
+    "code": "FCK-010",
+    "category": "Farmacocinetica Clinica",
+    "subcategory": "Interacao com transportadores",
+    "difficulty": "Avançada",
+    "prompt": "Paciente em uso crônico de digoxina inicia amiodarona para controle de arritmia. Semanas depois, apresenta sinais de intoxicação digitálica com nível sérico elevado, sem alteração da função renal. O mecanismo mais provável é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Amiodarona inibe a P-glicoproteína, reduzindo a excreção renal e biliar da digoxina.",
+        "rationale": "Correto: amiodarona é inibidora da P-gp, transportador responsável pela excreção da digoxina; a interação exige redução de até 50% da dose de digoxina."
+      },
+      {
+        "letter": "B",
+        "text": "Amiodarona desloca a digoxina da ligação à albumina, aumentando a fração livre tóxica.",
+        "rationale": "Incorreto: a digoxina tem baixa ligação proteica; esse não é o mecanismo principal da interação."
+      },
+      {
+        "letter": "C",
+        "text": "Amiodarona induz o metabolismo hepático da digoxina, gerando metabólitos mais tóxicos.",
+        "rationale": "Incorreto: a digoxina não é extensamente metabolizada pelo fígado; a via principal é renal via P-gp."
+      },
+      {
+        "letter": "D",
+        "text": "Amiodarona aumenta a motilidade intestinal, elevando a absorção da digoxina administrada por via oral.",
+        "rationale": "Incorreto: o mecanismo predominante descrito na literatura é a inibição da P-glicoproteína, não alteração de motilidade."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Ao associar amiodarona à digoxina, reduzir a dose de digoxina em 30-50% e monitorar nível sérico e sinais de toxicidade."
+  },
+  {
+    "id": 11,
+    "code": "FDN-001",
+    "category": "Farmacodinamica e Receptores",
+    "subcategory": "Agonismo e antagonismo",
+    "difficulty": "Intermediária",
+    "prompt": "Em um estudo de dose-resposta, um novo betabloqueador desloca a curva do agonista isoproterenol para a direita, sem reduzir o efeito máximo alcançável quando a dose do agonista é suficientemente aumentada. Esse padrão caracteriza:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Antagonismo competitivo reversível.",
+        "rationale": "Correto: o antagonismo competitivo reversível desloca a curva dose-resposta do agonista para a direita, mas o efeito máximo pode ser restaurado com doses suficientemente altas do agonista."
+      },
+      {
+        "letter": "B",
+        "text": "Antagonismo não competitivo irreversível.",
+        "rationale": "Incorreto: o antagonismo não competitivo reduz o efeito máximo, independentemente da dose do agonista, o que não ocorre neste caso."
+      },
+      {
+        "letter": "C",
+        "text": "Agonismo parcial do próprio betabloqueador no receptor.",
+        "rationale": "Incorreto: agonismo parcial produziria efeito submáximo mesmo na ausência de antagonista, não desvio da curva do agonista."
+      },
+      {
+        "letter": "D",
+        "text": "Dessensibilização do receptor por internalização induzida pelo antagonista.",
+        "rationale": "Incorreto: dessensibilização reduziria a resposta máxima de forma mais duradoura, não seria revertida por aumento de dose do agonista."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Antagonista competitivo reversível: desvio paralelo da curva à direita, com preservação do efeito máximo (Emax) em doses altas do agonista."
+  },
+  {
+    "id": 12,
+    "code": "FDN-002",
+    "category": "Farmacodinamica e Receptores",
+    "subcategory": "Indice terapeutico",
+    "difficulty": "Intermediária",
+    "prompt": "Um fármaco A tem DL50 de 200 mg/kg e DE50 de 4 mg/kg; um fármaco B tem DL50 de 100 mg/kg e DE50 de 20 mg/kg. Sobre a margem de segurança dos dois fármacos, é correto afirmar:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "O fármaco B tem maior índice terapêutico e, portanto, é mais seguro que o A.",
+        "rationale": "Incorreto: o índice terapêutico de B é 100/20 = 5, menor que o de A, portanto B é menos seguro."
+      },
+      {
+        "letter": "B",
+        "text": "O fármaco A tem índice terapêutico igual a 50, sendo mais seguro que o fármaco B.",
+        "rationale": "Correto: IT = DL50/DE50; A = 200/4 = 50 e B = 100/20 = 5. Quanto maior o IT, maior a margem de segurança."
+      },
+      {
+        "letter": "C",
+        "text": "Os dois fármacos têm a mesma margem de segurança, pois ambos têm relação linear entre dose letal e efetiva.",
+        "rationale": "Incorreto: os índices terapêuticos calculados (50 versus 5) são claramente diferentes."
+      },
+      {
+        "letter": "D",
+        "text": "O índice terapêutico não pode ser calculado com os dados fornecidos.",
+        "rationale": "Incorreto: os dados de DL50 e DE50 são exatamente os necessários para calcular o índice terapêutico."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Índice terapêutico = DL50/DE50 (ou DT50/DE50 na prática clínica); quanto maior o valor, mais seguro o fármaco."
+  },
+  {
+    "id": 13,
+    "code": "FDN-003",
+    "category": "Farmacodinamica e Receptores",
+    "subcategory": "Tolerancia e taquifilaxia",
+    "difficulty": "Intermediária",
+    "prompt": "Paciente em uso contínuo de nitrato de ação prolongada para angina, sem intervalo livre de fármaco, relata perda progressiva do efeito antianginoso ao longo dos dias. Esse fenômeno é mais bem explicado por:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Indução do metabolismo hepático dos nitratos, reduzindo seus níveis plasmáticos.",
+        "rationale": "Incorreto: o mecanismo clássico da tolerância a nitratos não é predominantemente metabólico."
+      },
+      {
+        "letter": "B",
+        "text": "Depleção de grupos sulfidrila necessários para a bioconversão do nitrato em óxido nítrico.",
+        "rationale": "Correto: o uso contínuo sem intervalo livre causa tolerância por depleção de tióis, essenciais à geração de óxido nítrico a partir do nitrato."
+      },
+      {
+        "letter": "C",
+        "text": "Desenvolvimento de anticorpos neutralizantes contra a molécula do nitrato.",
+        "rationale": "Incorreto: nitratos são pequenas moléculas que não geram resposta imunológica relevante."
+      },
+      {
+        "letter": "D",
+        "text": "Aumento da atividade da fosfodiesterase-5, degradando o GMPc mais rapidamente.",
+        "rationale": "Incorreto: esse mecanismo é relevante para a interação nitrato-inibidor de PDE5, não para a tolerância clássica."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Prevenir tolerância a nitratos com intervalo livre de 8-12 horas por dia, geralmente à noite, quando a demanda de O2 miocárdico é menor."
+  },
+  {
+    "id": 14,
+    "code": "FDN-004",
+    "category": "Farmacodinamica e Receptores",
+    "subcategory": "Receptores acoplados a proteina G",
+    "difficulty": "Avançada",
+    "prompt": "A ativação de receptores beta-1 adrenérgicos no miocárdio, via proteína Gs, resulta em aumento da força de contração cardíaca. A via de sinalização intracelular responsável por esse efeito inotrópico positivo envolve:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Ativação de fosfolipase C, gerando IP3 e liberação de cálcio do retículo sarcoplasmático.",
+        "rationale": "Incorreto: essa via é típica de receptores acoplados à Gq, como os alfa-1 adrenérgicos, não beta-1."
+      },
+      {
+        "letter": "B",
+        "text": "Aumento de AMPc, ativação da proteína quinase A e fosforilação de canais de cálcio tipo L.",
+        "rationale": "Correto: receptores beta-1 acoplam-se à Gs, ativando adenilato ciclase, elevando AMPc e ativando PKA, que fosforila canais de Ca2+ tipo L, aumentando o influxo de cálcio e a contratilidade."
+      },
+      {
+        "letter": "C",
+        "text": "Inibição de adenilato ciclase, reduzindo AMPc e desfosforilando canais de potássio.",
+        "rationale": "Incorreto: esse padrão descreve receptores acoplados à proteína Gi, como os M2 muscarínicos, com efeito oposto ao descrito."
+      },
+      {
+        "letter": "D",
+        "text": "Ativação direta de canais iônicos ligante-dependentes, sem segundo mensageiro.",
+        "rationale": "Incorreto: receptores beta-adrenérgicos são metabotrópicos, dependentes de segundo mensageiro, não ionotrópicos diretos."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Beta-1 (Gs) aumenta AMPc/PKA e contratilidade cardíaca; M2 e alfa-2 (Gi) reduzem AMPc; alfa-1 (Gq) ativa fosfolipase C/IP3/DAG."
+  },
+  {
+    "id": 15,
+    "code": "FDN-005",
+    "category": "Farmacodinamica e Receptores",
+    "subcategory": "Farmacos de janela terapeutica estreita",
+    "difficulty": "Intermediária",
+    "prompt": "Lítio, varfarina, digoxina e fenitoína compartilham uma característica farmacodinâmica/farmacocinética que exige monitorização terapêutica rigorosa. Essa característica é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Todos possuem meia-vida extremamente curta, exigindo múltiplas doses diárias.",
+        "rationale": "Incorreto: as meias-vidas variam bastante entre esses fármacos; essa não é a característica compartilhada relevante."
+      },
+      {
+        "letter": "B",
+        "text": "Todos apresentam índice terapêutico estreito, com pequena diferença entre dose eficaz e tóxica.",
+        "rationale": "Correto: esses fármacos têm margem estreita entre concentração terapêutica e tóxica, exigindo monitorização de nível sérico."
+      },
+      {
+        "letter": "C",
+        "text": "Todos são excretados exclusivamente por via biliar, sem eliminação renal.",
+        "rationale": "Incorreto: lítio e digoxina, por exemplo, têm eliminação predominantemente renal, não biliar."
+      },
+      {
+        "letter": "D",
+        "text": "Todos apresentam biodisponibilidade oral inferior a 10%.",
+        "rationale": "Incorreto: varfarina e fenitoína, por exemplo, têm biodisponibilidade oral alta, próxima de 100% e 90%, respectivamente."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Fármacos de índice terapêutico estreito exigem monitorização de nível sérico e atenção redobrada a interações medicamentosas e mudanças de função renal/hepática."
+  },
+  {
+    "id": 16,
+    "code": "FDN-006",
+    "category": "Farmacodinamica e Receptores",
+    "subcategory": "Down-regulation de receptores",
+    "difficulty": "Avançada",
+    "prompt": "Paciente asmático em uso frequente e excessivo de beta-2 agonista de curta duração (salbutamol) apresenta piora progressiva da resposta broncodilatadora ao longo das semanas. O mecanismo molecular mais provável é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Aumento da expressão de receptores beta-2 na musculatura lisa brônquica.",
+        "rationale": "Incorreto: o uso excessivo tende a reduzir, não aumentar, a expressão funcional de receptores."
+      },
+      {
+        "letter": "B",
+        "text": "Metabolismo acelerado do salbutamol por indução do CYP3A4 pulmonar.",
+        "rationale": "Incorreto: o mecanismo predominante da tolerância a beta-agonistas não é metabólico, mas receptor-mediado."
+      },
+      {
+        "letter": "C",
+        "text": "Dessensibilização e down-regulation dos receptores beta-2 por fosforilação e internalização induzidas pelo uso excessivo.",
+        "rationale": "Correto: o uso frequente de agonistas beta-2 causa fosforilação do receptor por quinases (GRK), recrutamento de beta-arrestina, internalização e down-regulation, reduzindo a resposta clínica."
+      },
+      {
+        "letter": "D",
+        "text": "Desenvolvimento de broncoconstrição paradoxal por hipersensibilidade imunológica ao fármaco.",
+        "rationale": "Incorreto: embora broncoespasmo paradoxal exista, o quadro descrito de perda progressiva de resposta é típico de dessensibilização receptor-mediada."
+      }
+    ],
+    "correctLetter": "C",
+    "clinicalPointers": "Uso excessivo de beta-2 agonistas de curta duração sinaliza mau controle da asma e risco de exacerbações graves; reavaliar terapia de manutenção com corticoide inalatório."
+  },
+  {
+    "id": 17,
+    "code": "FDN-007",
+    "category": "Farmacodinamica e Receptores",
+    "subcategory": "Efeito teto e opioides",
+    "difficulty": "Intermediária",
+    "prompt": "Paciente com dor oncológica moderada está em uso de tramadol em dose máxima, com controle insuficiente da dor. Ao considerar trocar para morfina, o médico baseia-se no conceito farmacológico de que a morfina, diferentemente do tramadol e da buprenorfina, apresenta:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Efeito teto (ceiling effect) analgésico, limitando o aumento de dose.",
+        "rationale": "Incorreto: a morfina, como agonista pleno mu, não apresenta efeito teto analgésico significativo, ao contrário de agonistas parciais."
+      },
+      {
+        "letter": "B",
+        "text": "Ausência de efeito teto analgésico, permitindo titulação de dose conforme necessidade clínica.",
+        "rationale": "Correto: a morfina é agonista pleno do receptor mu-opioide, sem efeito teto analgésico relevante, permitindo escalonamento de dose para dor refratária."
+      },
+      {
+        "letter": "C",
+        "text": "Menor potência analgésica intrínseca que o tramadol em doses equivalentes.",
+        "rationale": "Incorreto: a morfina é significativamente mais potente que o tramadol em base miligrama a miligrama."
+      },
+      {
+        "letter": "D",
+        "text": "Mecanismo de ação exclusivamente serotoninérgico, sem atividade opioide direta.",
+        "rationale": "Incorreto: a morfina atua diretamente como agonista de receptores opioides, sem o componente serotoninérgico do tramadol."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Agonistas plenos (morfina, oxicodona, fentanil) não têm efeito teto; agonistas parciais (buprenorfina) e tramadol têm limitação de efeito máximo."
+  },
+  {
+    "id": 18,
+    "code": "FDN-008",
+    "category": "Farmacodinamica e Receptores",
+    "subcategory": "Farmacogenetica",
+    "difficulty": "Avançada",
+    "prompt": "Paciente com genótipo de baixa atividade da enzima tiopurina metiltransferase (TPMT) inicia azatioprina para doença de Crohn e desenvolve mielossupressão grave em dose padrão. A explicação farmacogenética é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Baixa atividade de TPMT reduz a inativação de metabólitos tiopurínicos, aumentando o acúmulo de nucleotídeos tioguanina tóxicos.",
+        "rationale": "Correto: TPMT inativa metabólitos da azatioprina; sua deficiência leva a acúmulo de tioguanina nucleotídeos e toxicidade hematológica grave, mesmo em doses habituais."
+      },
+      {
+        "letter": "B",
+        "text": "Baixa atividade de TPMT aumenta a absorção intestinal da azatioprina.",
+        "rationale": "Incorreto: TPMT é uma enzima de biotransformação, não relacionada à absorção intestinal do fármaco."
+      },
+      {
+        "letter": "C",
+        "text": "Baixa atividade de TPMT acelera a conversão de azatioprina em seu metabólito ativo, aumentando o efeito imunossupressor de forma benéfica.",
+        "rationale": "Incorreto: a deficiência de TPMT não acelera a ativação, mas reduz a via de inativação, gerando acúmulo tóxico."
+      },
+      {
+        "letter": "D",
+        "text": "Baixa atividade de TPMT está associada a maior risco de hepatotoxicidade, mas não de mielossupressão.",
+        "rationale": "Incorreto: o principal risco da deficiência de TPMT é justamente a mielossupressão grave, não hepatotoxicidade isolada."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Testar atividade de TPMT (ou genótipo) antes de iniciar azatioprina/6-mercaptopurina, especialmente em doenças inflamatórias intestinais e leucemias."
+  },
+  {
+    "id": 19,
+    "code": "FDN-009",
+    "category": "Farmacodinamica e Receptores",
+    "subcategory": "Curva dose-resposta graduada",
+    "difficulty": "Intermediária",
+    "prompt": "Em uma curva dose-resposta graduada, a potência de um fármaco é comparada a outro observando-se a posição da curva no eixo das doses (deslocamento à esquerda ou direita), enquanto a eficácia é avaliada por:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "A inclinação (slope) da porção linear da curva dose-resposta.",
+        "rationale": "Incorreto: a inclinação reflete a sensibilidade da resposta a variações de dose, não a eficácia máxima."
+      },
+      {
+        "letter": "B",
+        "text": "A dose necessária para atingir 50% do efeito máximo (DE50).",
+        "rationale": "Incorreto: a DE50 é o parâmetro clássico de potência, não de eficácia."
+      },
+      {
+        "letter": "C",
+        "text": "A altura do platô da curva, correspondente ao efeito máximo (Emax) alcançável.",
+        "rationale": "Correto: eficácia refere-se ao efeito máximo que um fármaco pode produzir (Emax), representado pela altura do platô da curva dose-resposta."
+      },
+      {
+        "letter": "D",
+        "text": "O tempo necessário para o fármaco atingir a concentração plasmática máxima.",
+        "rationale": "Incorreto: esse parâmetro (Tmax) é farmacocinético, não farmacodinâmico, e não define eficácia."
+      }
+    ],
+    "correctLetter": "C",
+    "clinicalPointers": "Potência = posição da curva no eixo X (DE50); eficácia = altura máxima da curva (Emax). Um fármaco pode ser menos potente, mas mais eficaz que outro."
+  },
+  {
+    "id": 20,
+    "code": "FDN-010",
+    "category": "Farmacodinamica e Receptores",
+    "subcategory": "Antagonismo fisiologico",
+    "difficulty": "Avançada",
+    "prompt": "Na anafilaxia, a adrenalina é usada não porque bloqueia diretamente os mediadores liberados pelos mastócitos, mas porque produz efeitos fisiológicos opostos aos da histamina por meio de receptores distintos. Esse tipo de antagonismo é classificado como:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Antagonismo farmacológico competitivo, pois compete pelo mesmo receptor da histamina.",
+        "rationale": "Incorreto: a adrenalina não atua nos receptores histamínicos; ela age em receptores adrenérgicos distintos."
+      },
+      {
+        "letter": "B",
+        "text": "Antagonismo químico, por inativação direta da molécula de histamina circulante.",
+        "rationale": "Incorreto: não há reação química direta entre adrenalina e histamina que as neutralize."
+      },
+      {
+        "letter": "C",
+        "text": "Antagonismo fisiológico, pois atua em receptores diferentes produzindo efeitos opostos no mesmo sistema.",
+        "rationale": "Correto: no antagonismo fisiológico, dois agonistas atuam em receptores distintos, gerando efeitos opostos no mesmo tecido/sistema — a adrenalina broncodilata e vasoconstringe, contrapondo-se aos efeitos da histamina."
+      },
+      {
+        "letter": "D",
+        "text": "Antagonismo não competitivo, por ligação irreversível ao receptor H1.",
+        "rationale": "Incorreto: a adrenalina não se liga a receptores H1, portanto não há antagonismo direto desse tipo."
+      }
+    ],
+    "correctLetter": "C",
+    "clinicalPointers": "Antagonismo fisiológico: efeitos opostos por vias/receptores diferentes (ex.: adrenalina versus histamina na anafilaxia). Não deve ser confundido com antagonismo competitivo clássico."
+  },
+  {
+    "id": 21,
+    "code": "INT-001",
+    "category": "Interacoes Medicamentosas",
+    "subcategory": "Sindrome serotoninergica",
+    "difficulty": "Avançada",
+    "prompt": "Paciente em uso de fluoxetina para depressão inicia tramadol para dor pós-cirúrgica e, dois dias depois, apresenta agitação, hipertermia, clônus, hiper-reflexia e diarreia. O diagnóstico e a conduta mais adequada são:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Síndrome neuroléptica maligna; suspender o antidepressivo e iniciar dantrolene.",
+        "rationale": "Incorreto: a síndrome neuroléptica maligna cursa com rigidez em 'cano de chumbo' e hiporreflexia, e está associada a antipsicóticos, não a essa combinação."
+      },
+      {
+        "letter": "B",
+        "text": "Síndrome serotoninérgica; suspender ambos os fármacos e oferecer suporte, considerando ciproeptadina em casos graves.",
+        "rationale": "Correto: a combinação de ISRS e tramadol (que também inibe recaptação de serotonina) é clássica causa de síndrome serotoninérgica, caracterizada por hiper-reflexia, clônus, agitação e hipertermia."
+      },
+      {
+        "letter": "C",
+        "text": "Crise colinérgica; administrar atropina imediatamente.",
+        "rationale": "Incorreto: o quadro clínico descrito (hiper-reflexia, clônus) não corresponde a crise colinérgica, que cursa com sialorreia, miose e bradicardia."
+      },
+      {
+        "letter": "D",
+        "text": "Reação alérgica cruzada entre os dois fármacos; administrar corticoide e anti-histamínico.",
+        "rationale": "Incorreto: os sinais neurológicos e autonômicos descritos não são característicos de reação alérgica isolada."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Evitar associar tramadol, ISRS/IRSN, IMAO e linezolida pelo risco de síndrome serotoninérgica; reconhecer clônus e hiper-reflexia como sinais-chave diferenciais da SNM."
+  },
+  {
+    "id": 22,
+    "code": "INT-002",
+    "category": "Interacoes Medicamentosas",
+    "subcategory": "Interacao com sumo de toranja",
+    "difficulty": "Intermediária",
+    "prompt": "Paciente em uso de sinvastatina passa a consumir suco de toranja (grapefruit) diariamente no café da manhã e, semanas depois, desenvolve mialgia intensa com elevação de CPK. O mecanismo da interação é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "O suco de toranja inibe o CYP3A4 intestinal, aumentando a biodisponibilidade e os níveis plasmáticos da sinvastatina.",
+        "rationale": "Correto: componentes do suco de toranja (furanocumarinas) inibem irreversivelmente o CYP3A4 intestinal, aumentando a absorção sistêmica de estatinas metabolizadas por essa via, elevando o risco de miopatia/rabdomiólise."
+      },
+      {
+        "letter": "B",
+        "text": "O suco de toranja quela a sinvastatina no trato digestivo, formando complexo inativo.",
+        "rationale": "Incorreto: não há formação de quelato relevante entre estatinas e componentes do suco de toranja."
+      },
+      {
+        "letter": "C",
+        "text": "O suco de toranja induz a P-glicoproteína, aumentando a excreção biliar da sinvastatina.",
+        "rationale": "Incorreto: o efeito predominante do suco de toranja é inibição do CYP3A4 intestinal, não indução de transportadores."
+      },
+      {
+        "letter": "D",
+        "text": "O suco de toranja acidifica o trato gastrintestinal, aumentando a ionização e absorção da sinvastatina.",
+        "rationale": "Incorreto: o mecanismo estabelecido na literatura é a inibição enzimática do CYP3A4, não alteração de pH."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Suco de toranja interage com estatinas metabolizadas por CYP3A4 (sinvastatina, lovastatina, atorvastatina); pravastatina e rosuvastatina são alternativas menos afetadas."
+  },
+  {
+    "id": 23,
+    "code": "INT-003",
+    "category": "Interacoes Medicamentosas",
+    "subcategory": "Interacao IECA e diuretico poupador de potassio",
+    "difficulty": "Intermediária",
+    "prompt": "Paciente hipertenso em uso de enalapril tem espironolactona adicionada para tratamento de insuficiência cardíaca. Após duas semanas, exames mostram potássio sérico de 6,2 mEq/L. O mecanismo dessa interação é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Ambos os fármacos reduzem a excreção renal de potássio por mecanismos complementares, somando o risco de hipercalemia.",
+        "rationale": "Correto: IECA reduz aldosterona (e consequentemente a excreção de potássio) e a espironolactona bloqueia diretamente o receptor de aldosterona; a combinação potencializa o risco de hipercalemia grave."
+      },
+      {
+        "letter": "B",
+        "text": "A espironolactona aumenta o metabolismo hepático do enalapril, reduzindo seu efeito anti-hipertensivo.",
+        "rationale": "Incorreto: essa interação não explica a hipercalemia observada, que é o achado central do caso."
+      },
+      {
+        "letter": "C",
+        "text": "O enalapril inibe a absorção intestinal de potássio, e a espironolactona apenas mascara esse efeito.",
+        "rationale": "Incorreto: IECA não inibe a absorção intestinal de potássio; o mecanismo é renal, via sistema renina-angiotensina-aldosterona."
+      },
+      {
+        "letter": "D",
+        "text": "A combinação causa perda urinária excessiva de potássio, levando a hipercalemia de rebote.",
+        "rationale": "Incorreto: o quadro é de retenção de potássio (hipercalemia), não de perda urinária excessiva."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Monitorar potássio sérico e função renal ao associar IECA/BRA com espironolactona ou outros poupadores de potássio, especialmente em idosos e nefropatas."
+  },
+  {
+    "id": 24,
+    "code": "INT-004",
+    "category": "Interacoes Medicamentosas",
+    "subcategory": "Interacao varfarina e antibiotico",
+    "difficulty": "Avançada",
+    "prompt": "Paciente em uso crônico de varfarina, com INR estável em 2,5, inicia sulfametoxazol-trimetoprima para infecção urinária. Uma semana depois, apresenta epistaxe e INR de 6,8. O mecanismo predominante dessa interação é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Inibição do metabolismo hepático da varfarina pelo CYP2C9, além de deslocamento da ligação proteica.",
+        "rationale": "Correto: sulfametoxazol-trimetoprima inibe o CYP2C9, principal enzima responsável pelo metabolismo do enantiômero S-varfarina (mais potente), além de deslocar a varfarina de sua ligação à albumina, potencializando o efeito anticoagulante."
+      },
+      {
+        "letter": "B",
+        "text": "Indução do metabolismo hepático da varfarina, reduzindo sua depuração plasmática.",
+        "rationale": "Incorreto: indução enzimática reduziria o efeito da varfarina, resultando em INR mais baixo, não mais alto."
+      },
+      {
+        "letter": "C",
+        "text": "Redução da absorção intestinal de vitamina K pela flora bacteriana suprimida pelo antibiótico.",
+        "rationale": "Incorreto: embora antibióticos possam reduzir a síntese bacteriana de vitamina K, o mecanismo predominante nessa interação clássica é a inibição enzimática do CYP2C9."
+      },
+      {
+        "letter": "D",
+        "text": "Aumento da síntese hepática de fatores de coagulação dependentes de vitamina K.",
+        "rationale": "Incorreto: o resultado observado é justamente a redução funcional desses fatores (INR elevado), não aumento de síntese."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Sulfametoxazol-trimetoprima é um potente inibidor do CYP2C9; monitorar INR de perto ao associar com varfarina e considerar antibiótico alternativo quando possível."
+  },
+  {
+    "id": 25,
+    "code": "INT-005",
+    "category": "Interacoes Medicamentosas",
+    "subcategory": "Interacao com IMAO e alimentos",
+    "difficulty": "Avançada",
+    "prompt": "Paciente em uso de tranilcipromina (inibidor da monoaminoxidase) ingere queijos envelhecidos e vinho tinto em uma refeição e, horas depois, desenvolve cefaleia intensa, hipertensão grave e taquicardia. O mecanismo dessa crise é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Acúmulo de tiramina, que não é degradada pela MAO inibida, levando à liberação maciça de catecolaminas armazenadas.",
+        "rationale": "Correto: alimentos fermentados contêm tiramina, normalmente degradada pela MAO intestinal/hepática; com a MAO inibida, a tiramina é absorvida intacta e desencadeia liberação maciça de noradrenalina das terminações simpáticas, causando crise hipertensiva."
+      },
+      {
+        "letter": "B",
+        "text": "Reação alérgica IgE-mediada ao conservante presente no queijo envelhecido.",
+        "rationale": "Incorreto: o quadro descrito (hipertensão grave, cefaleia, taquicardia) é característico de crise tiramínica, não de reação alérgica clássica."
+      },
+      {
+        "letter": "C",
+        "text": "Interação farmacocinética por inibição do CYP3A4 pelos compostos do vinho tinto.",
+        "rationale": "Incorreto: o mecanismo central dessa interação clássica é farmacodinâmico (tiramina/catecolaminas), não inibição enzimática pelo vinho."
+      },
+      {
+        "letter": "D",
+        "text": "Hipoglicemia reativa desencadeada pela combinação de álcool e IMAO.",
+        "rationale": "Incorreto: o quadro clínico apresentado é de crise hipertensiva, não de hipoglicemia."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Pacientes em uso de IMAO devem evitar alimentos ricos em tiramina (queijos envelhecidos, vinho tinto, embutidos curados) pelo risco de crise hipertensiva grave."
+  },
+  {
+    "id": 26,
+    "code": "INT-006",
+    "category": "Interacoes Medicamentosas",
+    "subcategory": "Interacao AINE e IECA (triplice whammy)",
+    "difficulty": "Avançada",
+    "prompt": "Idoso hipertenso em uso de losartana e hidroclorotiazida inicia diclofenaco por conta própria para dor articular. Uma semana depois, é internado com lesão renal aguda. A combinação envolvida nesse quadro é conhecida como:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Síndrome de Stevens-Johnson farmacológica, por reação cruzada entre os três fármacos.",
+        "rationale": "Incorreto: o quadro descrito é renal (lesão renal aguda), não dermatológico."
+      },
+      {
+        "letter": "B",
+        "text": "'Tríplice whammy', em que a associação de BRA/IECA, diurético e AINE reduz a perfusão glomerular e precipita lesão renal aguda.",
+        "rationale": "Correto: BRA/IECA reduzem a vasoconstrição da arteríola eferente, diuréticos causam depleção de volume, e AINEs inibem prostaglandinas vasodilatadoras da arteríola aferente — juntos, reduzem criticamente a perfusão glomerular."
+      },
+      {
+        "letter": "C",
+        "text": "Síndrome de abstinência anti-hipertensiva, causada pela suspensão abrupta da hidroclorotiazida.",
+        "rationale": "Incorreto: não há relato de suspensão de medicação no enunciado; o problema é a adição do AINE."
+      },
+      {
+        "letter": "D",
+        "text": "Toxicidade direta do diclofenaco sobre os túbulos renais, sem relação com os outros fármacos.",
+        "rationale": "Incorreto: embora AINEs tenham nefrotoxicidade intrínseca, o quadro clássico descrito envolve a interação sinérgica dos três fármacos, não o AINE isoladamente."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Alertar pacientes em uso de IECA/BRA + diurético sobre o risco de lesão renal aguda ao associar AINE, especialmente em idosos, desidratados ou nefropatas prévios."
+  },
+  {
+    "id": 27,
+    "code": "INT-007",
+    "category": "Interacoes Medicamentosas",
+    "subcategory": "Interacao com antiacidos",
+    "difficulty": "Intermediária",
+    "prompt": "Paciente em uso de ciprofloxacino para infecção respiratória toma o antibiótico junto com um antiácido contendo hidróxido de alumínio e magnésio, relatando falha terapêutica. O mecanismo da interação é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "O antiácido altera o pH gástrico, inativando quimicamente a molécula do ciprofloxacino.",
+        "rationale": "Incorreto: o principal mecanismo não é a alteração de pH, mas a formação de complexo insolúvel com os cátions do antiácido."
+      },
+      {
+        "letter": "B",
+        "text": "Os cátions divalentes (Al3+, Mg2+) formam quelatos insolúveis com o ciprofloxacino, reduzindo drasticamente sua absorção intestinal.",
+        "rationale": "Correto: fluoroquinolonas formam complexos quelados com cátions polivalentes (Al, Mg, Ca, Fe, Zn), reduzindo significativamente sua biodisponibilidade oral."
+      },
+      {
+        "letter": "C",
+        "text": "O antiácido acelera o esvaziamento gástrico, reduzindo o tempo de absorção do antibiótico.",
+        "rationale": "Incorreto: antiácidos à base de alumínio tendem a retardar, não acelerar, o esvaziamento gástrico."
+      },
+      {
+        "letter": "D",
+        "text": "O antiácido induz o metabolismo hepático do ciprofloxacino, reduzindo seus níveis séricos.",
+        "rationale": "Incorreto: antiácidos não são indutores enzimáticos; o mecanismo é de quelação local no trato gastrintestinal."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Separar fluoroquinolonas de antiácidos, sais de ferro, cálcio e suplementos multivitamínicos por pelo menos 2-6 horas para evitar quelação e falha terapêutica."
+  },
+  {
+    "id": 28,
+    "code": "INT-008",
+    "category": "Interacoes Medicamentosas",
+    "subcategory": "Interacao alcool e metronidazol",
+    "difficulty": "Intermediária",
+    "prompt": "Paciente em tratamento de vaginose bacteriana com metronidazol consome bebida alcoólica em uma festa e apresenta náuseas intensas, vômitos, rubor facial e taquicardia (reação tipo dissulfiram-símile). O mecanismo dessa reação é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Inibição da aldeído desidrogenase pelo metronidazol, levando ao acúmulo de acetaldeído.",
+        "rationale": "Correto: o metronidazol inibe a aldeído desidrogenase hepática, impedindo a degradação do acetaldeído (metabólito do etanol), que se acumula e causa a reação dissulfiram-símile."
+      },
+      {
+        "letter": "B",
+        "text": "Indução do metabolismo do etanol, acelerando sua conversão em acetaldeído sem posterior degradação.",
+        "rationale": "Incorreto: o mecanismo não é aceleração da primeira etapa, mas bloqueio da segunda etapa (degradação do acetaldeído)."
+      },
+      {
+        "letter": "C",
+        "text": "Competição direta pelos receptores GABA-A entre metronidazol e etanol.",
+        "rationale": "Incorreto: essa não é a base farmacológica da reação dissulfiram-símile, que é metabólica, não receptor-mediada."
+      },
+      {
+        "letter": "D",
+        "text": "Depleção de tiamina induzida pelo metronidazol, similar à síndrome de Wernicke.",
+        "rationale": "Incorreto: essa não é a explicação da reação aguda descrita; a depleção de tiamina está associada ao alcoolismo crônico, não a essa interação aguda."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Orientar abstinência de álcool durante o uso de metronidazol e por pelo menos 24-48 horas após seu término, pelo risco de reação dissulfiram-símile."
+  },
+  {
+    "id": 29,
+    "code": "INT-009",
+    "category": "Interacoes Medicamentosas",
+    "subcategory": "Interacao digoxina e claritromicina",
+    "difficulty": "Avançada",
+    "prompt": "Paciente idoso em uso crônico de digoxina para fibrilação atrial inicia claritromicina para tratamento de pneumonia adquirida na comunidade. Dias depois, apresenta náuseas, confusão mental e bradiarritmia. O mecanismo mais provável é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "A claritromicina altera a flora intestinal que normalmente inativa parte da digoxina, além de inibir a P-glicoproteína, aumentando sua absorção e reduzindo sua excreção.",
+        "rationale": "Correto: macrolídeos reduzem a flora intestinal responsável pela inativação bacteriana de parte da digoxina e inibem a P-glicoproteína, ambos elevando os níveis séricos de digoxina."
+      },
+      {
+        "letter": "B",
+        "text": "A claritromicina compete pela ligação à albumina, deslocando a digoxina para a forma livre.",
+        "rationale": "Incorreto: a digoxina tem baixa ligação proteica (~25%), tornando esse mecanismo pouco relevante clinicamente."
+      },
+      {
+        "letter": "C",
+        "text": "A claritromicina reduz a absorção intestinal da digoxina por quelação direta.",
+        "rationale": "Incorreto: não há formação de quelato entre macrolídeos e digoxina; o mecanismo é de flora intestinal e P-glicoproteína."
+      },
+      {
+        "letter": "D",
+        "text": "A claritromicina aumenta a filtração glomerular, mas reduz a secreção tubular ativa da digoxina.",
+        "rationale": "Incorreto: essa descrição não corresponde ao mecanismo farmacológico estabelecido para essa interação clássica."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Ao associar macrolídeos (especialmente claritromicina/eritromicina) à digoxina, considerar redução de dose e monitorar sinais de toxicidade digitálica."
+  },
+  {
+    "id": 30,
+    "code": "INT-010",
+    "category": "Interacoes Medicamentosas",
+    "subcategory": "Interacao com hipoglicemiantes",
+    "difficulty": "Intermediária",
+    "prompt": "Paciente diabético em uso de glibenclamida associa levofloxacino para tratamento de infecção urinária complicada e apresenta episódios de hipoglicemia sintomática nos dias seguintes. O mecanismo dessa interação envolve:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "O levofloxacino inibe a absorção intestinal de glicose, causando hipoglicemia isolada.",
+        "rationale": "Incorreto: fluoroquinolonas não atuam predominantemente inibindo a absorção intestinal de glicose."
+      },
+      {
+        "letter": "B",
+        "text": "O levofloxacino potencializa a secreção pancreática de insulina, por efeito sobre canais de potássio dependentes de ATP nas células beta, somando-se ao efeito da sulfonilureia.",
+        "rationale": "Correto: fluoroquinolonas (especialmente as mais antigas) podem afetar canais KATP das células beta pancreáticas, potencializando a secreção de insulina já estimulada pela sulfonilureia, aumentando o risco de hipoglicemia."
+      },
+      {
+        "letter": "C",
+        "text": "O levofloxacino inibe o metabolismo hepático da glibenclamida via CYP2C9, prolongando seu efeito.",
+        "rationale": "Incorreto: embora possa haver algum componente farmacocinético, o mecanismo mais descrito é a disglicemia direta por ação sobre canais KATP."
+      },
+      {
+        "letter": "D",
+        "text": "O levofloxacino aumenta a excreção renal de glicose, mascarando a hiperglicemia basal do paciente.",
+        "rationale": "Incorreto: esse não é um mecanismo farmacológico reconhecido de fluoroquinolonas."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Fluoroquinolonas podem causar tanto hipoglicemia quanto hiperglicemia (disglicemia); monitorar glicemia de perto em diabéticos em uso de hipoglicemiantes orais ou insulina."
+  },
+  {
+    "id": 31,
+    "code": "RAM-001",
+    "category": "Reacoes Adversas e Farmacovigilancia",
+    "subcategory": "Classificacao de RAM",
+    "difficulty": "Intermediária",
+    "prompt": "Paciente em uso de enalapril desenvolve tosse seca persistente, um efeito previsível, dose-dependente e relacionado ao mecanismo de ação do fármaco (acúmulo de bradicinina). Segundo a classificação clássica de reações adversas, esse tipo de reação é classificado como:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Tipo A (aumentada), previsível a partir da farmacologia do fármaco.",
+        "rationale": "Correto: reações tipo A são exageros do efeito farmacológico conhecido, dose-dependentes e prevísiveis, como a tosse por acúmulo de bradicinina com IECA."
+      },
+      {
+        "letter": "B",
+        "text": "Tipo B (bizarra), imprevisível e não relacionada à dose.",
+        "rationale": "Incorreto: reações tipo B são idiossincrásicas e não guardam relação com o mecanismo farmacológico conhecido, ao contrário da tosse por IECA."
+      },
+      {
+        "letter": "C",
+        "text": "Tipo C (crônica), relacionada ao uso prolongado e cumulativo do fármaco.",
+        "rationale": "Incorreto: a tosse por IECA pode surgir precocemente, não depende de uso prolongado cumulativo."
+      },
+      {
+        "letter": "D",
+        "text": "Tipo D (retardada), que se manifesta anos após a exposição ao fármaco.",
+        "rationale": "Incorreto: reações tipo D (ex.: carcinogênese) manifestam-se muito tempo após exposição, diferente da tosse por IECA."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Reações tipo A são previsíveis e dose-dependentes (relacionadas ao mecanismo de ação); tipo B são idiossincrásicas/imunológicas e imprevisíveis."
+  },
+  {
+    "id": 32,
+    "code": "RAM-002",
+    "category": "Reacoes Adversas e Farmacovigilancia",
+    "subcategory": "Sindrome de Stevens-Johnson",
+    "difficulty": "Avançada",
+    "prompt": "Paciente inicia carbamazepina para neuralgia do trigêmeo e, após 12 dias, desenvolve febre, mal-estar e lesões cutâneas bolhosas dolorosas com acometimento de mucosa oral, evoluindo com descolamento epidérmico em menos de 10% da superfície corporal. O diagnóstico mais provável e a conduta imediata são:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Síndrome de Stevens-Johnson; suspender imediatamente a carbamazepina e encaminhar para unidade especializada.",
+        "rationale": "Correto: o quadro descrito (febre, lesões bolhosas mucocutâneas, descolamento <10% da superfície corporal) é típico de Stevens-Johnson, reação tipo B grave associada à carbamazepina, especialmente em portadores do alelo HLA-B*1502."
+      },
+      {
+        "letter": "B",
+        "text": "Eritema multiforme minor; manter a carbamazepina e tratar sintomaticamente com anti-histamínico.",
+        "rationale": "Incorreto: o acometimento de mucosa e o descolamento epidérmico indicam gravidade maior que eritema multiforme minor, exigindo suspensão do fármaco."
+      },
+      {
+        "letter": "C",
+        "text": "Dermatite de contato alérgica; trocar apenas a formulação da carbamazepina.",
+        "rationale": "Incorreto: o quadro sistêmico com febre e acometimento mucoso não é compatível com dermatite de contato simples."
+      },
+      {
+        "letter": "D",
+        "text": "Urticária aguda induzida por fármaco; administrar apenas anti-histamínico oral e manter a medicação.",
+        "rationale": "Incorreto: urticária isolada não cursa com descolamento epidérmico e acometimento de mucosas como descrito."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Considerar triagem de HLA-B*1502 antes de iniciar carbamazepina em populações de risco (ex.: ascendência asiática); suspender imediatamente o fármaco suspeito diante de sinais de Stevens-Johnson/NET."
+  },
+  {
+    "id": 33,
+    "code": "RAM-003",
+    "category": "Reacoes Adversas e Farmacovigilancia",
+    "subcategory": "Farmacovigilancia e notificacao",
+    "difficulty": "Intermediária",
+    "prompt": "Um médico observa que três pacientes em uso do mesmo lote de um anti-hipertensivo genérico desenvolveram angioedema em curto intervalo de tempo. A conduta correta em relação à farmacovigilância é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Notificar o evento adverso ao sistema de vigilância sanitária (VigiMed/ANVISA), independente de certeza absoluta de causalidade.",
+        "rationale": "Correto: a notificação de suspeita de reação adversa não exige certeza de causalidade; sistemas de farmacovigilância dependem de notificação espontânea para identificar sinais de segurança."
+      },
+      {
+        "letter": "B",
+        "text": "Aguardar confirmação de pelo menos 10 casos antes de notificar, para evitar notificações desnecessárias.",
+        "rationale": "Incorreto: não há exigência de número mínimo de casos para notificação; a subnotificação compromete a farmacovigilância."
+      },
+      {
+        "letter": "C",
+        "text": "Não notificar, pois angioedema é um efeito adverso já conhecido e descrito em bula.",
+        "rationale": "Incorreto: mesmo reações já conhecidas devem ser notificadas, especialmente quando há suspeita de problema de lote ou aumento de frequência."
+      },
+      {
+        "letter": "D",
+        "text": "Comunicar apenas o fabricante do medicamento, sem necessidade de notificação às autoridades sanitárias.",
+        "rationale": "Incorreto: a notificação formal ao sistema oficial de farmacovigilância é essencial para rastreamento populacional do evento."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "A notificação de eventos adversos (mesmo suspeitos) a sistemas como VigiMed é fundamental para farmacovigilância pós-comercialização e detecção precoce de sinais de segurança."
+  },
+  {
+    "id": 34,
+    "code": "RAM-004",
+    "category": "Reacoes Adversas e Farmacovigilancia",
+    "subcategory": "Hepatotoxicidade por farmacos",
+    "difficulty": "Avançada",
+    "prompt": "Paciente em uso de isoniazida para tratamento de tuberculose latente desenvolve icterícia, náuseas e elevação de transaminases 5 vezes o limite superior da normalidade na 6ª semana de tratamento. A conduta mais apropriada é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Manter a isoniazida e apenas reduzir a dose pela metade, reavaliando em 30 dias.",
+        "rationale": "Incorreto: manter o fármaco hepatotóxico diante de hepatite clínica manifesta é conduta inadequada e perigosa."
+      },
+      {
+        "letter": "B",
+        "text": "Suspender a isoniazida imediatamente e monitorar a função hepática até normalização, antes de considerar reintrodução ou esquema alternativo.",
+        "rationale": "Correto: hepatotoxicidade sintomática (icterícia, náuseas) com transaminases elevadas exige suspensão imediata do fármaco hepatotóxico, com posterior avaliação de esquema alternativo."
+      },
+      {
+        "letter": "C",
+        "text": "Associar um segundo hepatotóxico (pirazinamida) para acelerar o tratamento e evitar prolongamento da terapia.",
+        "rationale": "Incorreto: associar outro fármaco hepatotóxico nesse contexto aumentaria o risco de insuficiência hepática grave."
+      },
+      {
+        "letter": "D",
+        "text": "Não é necessária qualquer intervenção, pois elevação transitória de transaminases é sempre benigna e autolimitada.",
+        "rationale": "Incorreto: icterícia clínica associada à elevação enzimática indica hepatite medicamentosa manifesta, não uma elevação assintomática transitória."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Suspender fármacos hepatotóxicos diante de sintomas de hepatite (icterícia, náuseas) ou transaminases >5x o limite superior mesmo assintomático (ou >3x com sintomas)."
+  },
+  {
+    "id": 35,
+    "code": "RAM-005",
+    "category": "Reacoes Adversas e Farmacovigilancia",
+    "subcategory": "Nefrotoxicidade por aminoglicosideos",
+    "difficulty": "Intermediária",
+    "prompt": "Paciente em uso de gentamicina por 10 dias para sepse apresenta elevação progressiva da creatinina sérica, sem outras causas identificadas. O principal fator de risco modificável para essa nefrotoxicidade, além da duração do tratamento, é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Administração em múltiplas doses fracionadas ao dia, em vez de dose única diária.",
+        "rationale": "Correto: doses múltiplas fracionadas mantêm níveis vale elevados persistentes, associados a maior captação tubular renal e maior nefrotoxicidade, comparado à dose única diária (extended-interval dosing)."
+      },
+      {
+        "letter": "B",
+        "text": "Uso concomitante de paracetamol para controle de febre associada à sepse.",
+        "rationale": "Incorreto: paracetamol em dose habitual não é fator de risco relevante para nefrotoxicidade por aminoglicosídeo."
+      },
+      {
+        "letter": "C",
+        "text": "Administração da gentamicina por via oral em vez de intravenosa.",
+        "rationale": "Incorreto: aminoglicosídeos têm absorção oral desprezível e são administrados por via parenteral; essa não é a questão central do risco de nefrotoxicidade."
+      },
+      {
+        "letter": "D",
+        "text": "Monitorização de nível sérico de vale (trough) antes de cada dose subsequente.",
+        "rationale": "Incorreto: monitorar o nível de vale é uma medida de segurança que reduz, não aumenta, o risco de toxicidade."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Preferir esquema de dose única diária (extended-interval) de aminoglicosídeos quando possível, monitorando função renal e níveis séricos para reduzir nefro/ototoxicidade."
+  },
+  {
+    "id": 36,
+    "code": "RAM-006",
+    "category": "Reacoes Adversas e Farmacovigilancia",
+    "subcategory": "Farmacos e prolongamento de QT",
+    "difficulty": "Avançada",
+    "prompt": "Paciente hospitalizado recebe associação de azitromicina, ondansetrona e haloperidol para tratamento de pneumonia com náuseas e agitação. O eletrocardiograma de controle mostra QTc de 510 ms. A principal preocupação clínica nesse cenário é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Desenvolvimento de bloqueio atrioventricular completo por bradicardia excessiva.",
+        "rationale": "Incorreto: o risco predominante do QT longo não é bloqueio AV, mas arritmia ventricular polimórfica."
+      },
+      {
+        "letter": "B",
+        "text": "Risco aumentado de torsades de pointes, arritmia ventricular polimórfica potencialmente fatal associada ao prolongamento do intervalo QT.",
+        "rationale": "Correto: azitromicina, ondansetrona e haloperidol são fármacos que prolongam o intervalo QT; seu uso combinado aumenta significativamente o risco de torsades de pointes, especialmente com QTc >500 ms."
+      },
+      {
+        "letter": "C",
+        "text": "Desenvolvimento de fibrilação atrial paroxística secundária à sepse.",
+        "rationale": "Incorreto: embora sepse possa cursar com arritmias, a associação medicamentosa descrita está classicamente ligada ao prolongamento do QT e torsades, não à FA isoladamente."
+      },
+      {
+        "letter": "D",
+        "text": "Hipertensão arterial de rebote pela interação entre os três fármacos.",
+        "rationale": "Incorreto: não há relação farmacológica estabelecida entre esses fármacos e hipertensão de rebote."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Avaliar risco cumulativo de prolongamento de QT ao associar múltiplos fármacos QT-prolongadores; monitorar eletrólitos (K+, Mg2+) e ECG seriado em pacientes de risco."
+  },
+  {
+    "id": 37,
+    "code": "RAM-007",
+    "category": "Reacoes Adversas e Farmacovigilancia",
+    "subcategory": "Reacao anafilatica a farmacos",
+    "difficulty": "Intermediária",
+    "prompt": "Minutos após receber amoxicilina intravenosa, paciente desenvolve urticária generalizada, broncoespasmo, hipotensão e edema de face. A primeira medida terapêutica a ser instituída, antes de qualquer outra, é:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Administração de corticoide intravenoso em dose alta, para controle rápido da inflamação.",
+        "rationale": "Incorreto: o corticoide tem início de ação lento e não é a primeira medida em anafilaxia; a adrenalina é prioritária."
+      },
+      {
+        "letter": "B",
+        "text": "Administração intramuscular imediata de adrenalina na face anterolateral da coxa.",
+        "rationale": "Correto: a adrenalina intramuscular é a primeira e mais importante medida no tratamento da anafilaxia, devendo ser administrada sem atraso diante de sinais de gravidade (broncoespasmo, hipotensão)."
+      },
+      {
+        "letter": "C",
+        "text": "Administração de anti-histamínico H1 oral, seguida de observação clínica.",
+        "rationale": "Incorreto: anti-histamínicos têm papel apenas coadjuvante e não tratam os sinais graves (hipotensão, broncoespasmo) da anafilaxia."
+      },
+      {
+        "letter": "D",
+        "text": "Solicitação de dosagem de triptase sérica antes de iniciar qualquer tratamento.",
+        "rationale": "Incorreto: a triptase é útil para confirmação diagnóstica posterior, mas não deve atrasar o tratamento emergencial."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Na anafilaxia, adrenalina IM (coxa anterolateral) é a primeira linha, sem atraso; corticoide e anti-histamínico são coadjuvantes, não substitutos."
+  },
+  {
+    "id": 38,
+    "code": "RAM-008",
+    "category": "Reacoes Adversas e Farmacovigilancia",
+    "subcategory": "Miopatia por estatinas",
+    "difficulty": "Intermediária",
+    "prompt": "Paciente em uso de sinvastatina 40 mg/dia associa claritromicina para sinusite bacteriana e, dias depois, apresenta mialgia difusa intensa e urina escura, com CPK 15 vezes o limite superior da normalidade. O diagnóstico e a conduta são:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Miopatia por estatina evoluindo para rabdomiólise, exigindo suspensão imediata da estatina e hidratação vigorosa.",
+        "rationale": "Correto: a inibição do CYP3A4 pela claritromicina eleva os níveis de sinvastatina, precipitando miopatia grave/rabdomiólise (CPK muito elevada, mioglobinúria); suspensão imediata e hidratação são essenciais para prevenir lesão renal aguda."
+      },
+      {
+        "letter": "B",
+        "text": "Infecção viral concomitante causando mialgia, sem relação com a medicação em uso.",
+        "rationale": "Incorreto: a elevação acentuada de CPK e urina escura, associada à interação farmacológica conhecida, apontam para miopatia induzida por fármaco, não infecção viral isolada."
+      },
+      {
+        "letter": "C",
+        "text": "Efeito adverso esperado e autolimitado da claritromicina, sem necessidade de intervenção.",
+        "rationale": "Incorreto: CPK 15 vezes o limite superior com mioglobinúria configura quadro grave que exige intervenção imediata, não observação passiva."
+      },
+      {
+        "letter": "D",
+        "text": "Reação alérgica cutânea com elevação secundária de enzimas musculares por atrito da coceira.",
+        "rationale": "Incorreto: o quadro descrito não é compatível com reação alérgica cutânea, mas com miopatia/rabdomiólise por interação medicamentosa."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Evitar associar estatinas metabolizadas por CYP3A4 (sinvastatina, lovastatina) com inibidores potentes desse citocromo (macrolídeos, azólicos); considerar troca temporária de estatina."
+  },
+  {
+    "id": 39,
+    "code": "RAM-009",
+    "category": "Reacoes Adversas e Farmacovigilancia",
+    "subcategory": "Discrasias sanguineas induzidas por farmacos",
+    "difficulty": "Avançada",
+    "prompt": "Paciente em uso de dipirona há 10 dias para cefaleia crônica apresenta febre alta, calafrios e úlceras orais dolorosas. O hemograma revela contagem de neutrófilos de 180/mm³. A hipótese diagnóstica e a conduta imediata são:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Agranulocitose induzida por dipirona; suspender o fármaco imediatamente e iniciar medidas de suporte, incluindo isolamento e antibioticoterapia se houver sinais de infecção.",
+        "rationale": "Correto: a dipirona é classicamente associada à agranulocitose idiossincrásica; diante de neutropenia grave e febre, deve-se suspender o fármaco e tratar como neutropenia febril, com suporte e antibioticoterapia empírica."
+      },
+      {
+        "letter": "B",
+        "text": "Reação alérgica cutaneomucosa simples, tratável apenas com anti-histamínico oral.",
+        "rationale": "Incorreto: neutropenia grave com febre não é um quadro alérgico cutâneo simples e configura emergência hematológica."
+      },
+      {
+        "letter": "C",
+        "text": "Leucemia aguda recém-diagnosticada, sem relação com o uso da dipirona.",
+        "rationale": "Incorreto: embora leucemia deva ser considerada no diagnóstico diferencial, o quadro agudo após uso de dipirona é altamente sugestivo de agranulocitose induzida por fármaco, uma reação idiossincrásica bem descrita."
+      },
+      {
+        "letter": "D",
+        "text": "Infecção viral autolimitada que cursa transitoriamente com neutropenia leve.",
+        "rationale": "Incorreto: a magnitude da neutropenia (180/mm³) e o contexto de uso de dipirona tornam a agranulocitose medicamentosa a hipótese mais provável e urgente."
+      }
+    ],
+    "correctLetter": "A",
+    "clinicalPointers": "Agranulocitose por dipirona é rara, mas grave e idiossincrásica (reação tipo B); qualquer febre ou infecção em uso de dipirona exige hemograma urgente."
+  },
+  {
+    "id": 40,
+    "code": "RAM-010",
+    "category": "Reacoes Adversas e Farmacovigilancia",
+    "subcategory": "Teratogenicidade",
+    "difficulty": "Avançada",
+    "prompt": "Uma mulher em idade fértil, em uso de ácido valproico para epilepsia, deseja engravidar. Sobre o risco teratogênico desse fármaco, é correto afirmar:",
+    "options": [
+      {
+        "letter": "A",
+        "text": "O ácido valproico é considerado seguro na gravidez e não requer qualquer precaução especial.",
+        "rationale": "Incorreto: o ácido valproico é um dos anticonvulsivantes com maior risco teratogênico conhecido, associado a defeitos do tubo neural."
+      },
+      {
+        "letter": "B",
+        "text": "O ácido valproico está associado a risco aumentado de defeitos do tubo neural e déficits cognitivos, devendo ser evitado na gravidez sempre que houver alternativa terapêutica.",
+        "rationale": "Correto: o valproato tem risco teratogênico bem documentado (defeitos do tubo neural, anomalias cardíacas e craniofaciais, prejuízo no neurodesenvolvimento), sendo recomendada a troca por alternativa mais segura antes da concepção, quando possível."
+      },
+      {
+        "letter": "C",
+        "text": "O risco teratogênico do valproato é idêntico ao de todos os outros anticonvulsivantes, não havendo motivo para preferência entre eles na gravidez.",
+        "rationale": "Incorreto: o valproato tem risco teratogênico comprovadamente maior que outros anticonvulsivantes, como a lamotrigina, em estudos comparativos."
+      },
+      {
+        "letter": "D",
+        "text": "A suplementação isolada de ácido fólico elimina completamente o risco teratogênico do valproato.",
+        "rationale": "Incorreto: o ácido fólico reduz o risco de defeitos do tubo neural em geral, mas não elimina o risco teratogênico específico e elevado do valproato."
+      }
+    ],
+    "correctLetter": "B",
+    "clinicalPointers": "Evitar valproato em mulheres em idade fértil sempre que possível; se indispensável, associar folato em alta dose e planejamento reprodutivo cuidadoso com neurologista."
+  }
+];
+</script>
+<script>
+/* =========================================================================
+   APP
+   ========================================================================= */
+(function () {
+"use strict";
+
+/* =========================================================================
+   0. CONSTANTES / STORAGE
+   ========================================================================= */
+const LS_KEYS = {
+  seen: "simfc_seen_ids",
+  history: "simfc_history",
+  weak: "simfc_weak_ids",
+  current: "simfc_current_attempt",
+  dark: "simfc_dark_mode",
+};
+const HISTORY_MAX = 50;
+
+function lsGet(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    return JSON.parse(raw);
+  } catch (e) {
+    return fallback;
+  }
+}
+function lsSet(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) { /* storage indisponível: segue sem persistir */ }
+}
+
+/* =========================================================================
+   1. PRNG DETERMINISTICO (xmur3 + mulberry32)
+   ========================================================================= */
+function xmur3(str) {
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return function () {
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    h ^= h >>> 16;
+    return h >>> 0;
+  };
+}
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function makeRng(seedStr) {
+  if (seedStr && seedStr.trim()) {
+    const seedFn = xmur3(seedStr.trim());
+    return mulberry32(seedFn());
+  }
+  // sem código de sessão: PRNG não determinístico, semeado a partir de valores aleatórios reais
+  const randomSeed = (Math.random() * 4294967296) >>> 0;
+  return mulberry32(randomSeed ^ Date.now());
+}
+
+function shuffleInPlace(arr, rng) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  }
+  return arr;
+}
+
+/* =========================================================================
+   2. UTILITARIOS GERAIS
+   ========================================================================= */
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+function formatTime(ms) {
+  const totalSec = Math.round(ms / 1000);
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  if (min <= 0) return `${sec}s`;
+  return `${min}min ${sec}s`;
+}
+function formatDate(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" }) +
+    " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+function toast(msg, kind) {
+  const container = document.getElementById("toast-container");
+  const el = document.createElement("div");
+  const colors = {
+    ok: "bg-emerald-600", err: "bg-rose-600", info: "bg-slate-800 dark:bg-slate-700"
+  };
+  el.className = `toast text-white text-sm px-4 py-2.5 rounded-lg shadow-lg ${colors[kind] || colors.info}`;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+function uniqueSubjects() {
+  const set = new Set(QUESTIONS_DATABASE.map((q) => q.category));
+  return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
+/* =========================================================================
+   3. ESTADO GLOBAL DA SESSAO (em memoria)
+   ========================================================================= */
+const App = {
+  currentScreen: "home",
+  attempt: null,       // tentativa em andamento / recem-concluida
+  lastGraded: null,    // resultado calculado da ultima tentativa (para revisao)
+  reviewFilter: "all",
+  autosaveTimer: null,
+};
+
+/* =========================================================================
+   4. AMOSTRAGEM BALANCEADA
+   ========================================================================= */
+function sampleBalanced(pool, subjects, n, rng, seenIds, respectAntiRepeat) {
+  const groups = subjects.map((s) => pool.filter((q) => q.category === s));
+  const totalAvailable = groups.reduce((a, g) => a + g.length, 0);
+  n = Math.min(n, totalAvailable);
+  if (n <= 0) return [];
+
+  const raw = groups.map((g) => (totalAvailable ? (g.length / totalAvailable) * n : 0));
+  const quotas = raw.map(Math.floor);
+  let remainder = n - quotas.reduce((a, b) => a + b, 0);
+  const fracOrder = raw
+    .map((r, i) => ({ i, frac: r - Math.floor(r) }))
+    .sort((a, b) => b.frac - a.frac);
+  for (let k = 0; k < remainder && k < fracOrder.length; k++) quotas[fracOrder[k].i]++;
+
+  const selected = [];
+  groups.forEach((g, i) => {
+    const quota = quotas[i];
+    if (quota <= 0) return;
+    let unseen = g.filter((q) => !seenIds.has(q.id));
+    let seen = g.filter((q) => seenIds.has(q.id));
+    if (!respectAntiRepeat) { unseen = g.slice(); seen = []; }
+    shuffleInPlace(unseen, rng);
+    shuffleInPlace(seen, rng);
+    let chosen = unseen.slice(0, quota);
+    if (chosen.length < quota) chosen = chosen.concat(seen.slice(0, quota - chosen.length));
+    selected.push(...chosen);
+  });
+
+  if (selected.length < n) {
+    const chosenIds = new Set(selected.map((q) => q.id));
+    const rest = pool.filter((q) => !chosenIds.has(q.id));
+    shuffleInPlace(rest, rng);
+    selected.push(...rest.slice(0, n - selected.length));
+  }
+
+  shuffleInPlace(selected, rng);
+  return selected.slice(0, n);
+}
+
+function buildSessionQuestions(questions, rng) {
+  return questions.map((q) => {
+    const opts = q.options.map((o) => ({
+      text: o.text,
+      rationale: o.rationale,
+      isCorrect: o.letter === q.correctLetter,
+    }));
+    shuffleInPlace(opts, rng);
+    return {
+      id: q.id,
+      code: q.code,
+      category: q.category,
+      subcategory: q.subcategory,
+      difficulty: q.difficulty,
+      prompt: q.prompt,
+      clinicalPointers: q.clinicalPointers,
+      options: opts, // ja embaralhadas; letra = indice
+      answerIndex: null,      // indice (0-3) escolhido pelo usuario
+      struck: [],              // indices riscados
+      marked: false,
+      hintShown: false,
+    };
+  });
+}
+
+/* =========================================================================
+   5. NAVEGACAO ENTRE TELAS
+   ========================================================================= */
+function showScreen(name) {
+  document.querySelectorAll(".screen").forEach((el) => el.classList.remove("active"));
+  document.getElementById("screen-" + name).classList.add("active");
+  App.currentScreen = name;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* =========================================================================
+   6. TELA INICIAL
+   ========================================================================= */
+function renderHome() {
+  const total = QUESTIONS_DATABASE.length;
+  const subjects = uniqueSubjects();
+  document.getElementById("stat-total").textContent = total;
+  document.getElementById("stat-subjects").textContent = subjects.length;
+  const commented = QUESTIONS_DATABASE.filter(
+    (q) => q.options.every((o) => o.rationale && o.rationale.trim())
+  ).length;
+  document.getElementById("stat-commented").textContent =
+    total ? Math.round((commented / total) * 100) + "%" : "0%";
+
+  renderSubjectsList(subjects);
+  renderCoverage(subjects);
+  renderHistory();
+  renderWeakPointsSummary();
+  renderResumeBanner();
+  updateQtdMaxLabel();
+}
+
+function renderSubjectsList(subjects) {
+  const container = document.getElementById("subjects-list");
+  const params = new URLSearchParams(location.search);
+  const preselected = params.get("assuntos");
+  const preselectedSet = preselected
+    ? new Set(preselected.split(",").map((s) => decodeURIComponent(s)))
+    : null;
+
+  container.innerHTML = subjects
+    .map((s) => {
+      const count = QUESTIONS_DATABASE.filter((q) => q.category === s).length;
+      const checked = preselectedSet ? preselectedSet.has(s) : true;
+      return `
+      <label class="flex items-center gap-2 text-sm p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer">
+        <input type="checkbox" class="subject-checkbox accent-brand-600" value="${escapeHtml(s)}" ${checked ? "checked" : ""}>
+        <span class="flex-1">${escapeHtml(s)}</span>
+        <span class="text-xs text-slate-400">${count}</span>
+      </label>`;
+    })
+    .join("");
+
+  container.querySelectorAll(".subject-checkbox").forEach((cb) =>
+    cb.addEventListener("change", updateQtdMaxLabel)
+  );
+}
+
+function getSelectedSubjects() {
+  return Array.from(document.querySelectorAll(".subject-checkbox:checked")).map((cb) => cb.value);
+}
+
+function updateQtdMaxLabel() {
+  const subjects = getSelectedSubjects();
+  const max = QUESTIONS_DATABASE.filter((q) => subjects.includes(q.category)).length;
+  document.getElementById("qtd-max-label").textContent = max;
+  const qtdInput = document.getElementById("input-qtd");
+  if (Number(qtdInput.value) > max && max > 0) qtdInput.value = max;
+}
+
+function renderCoverage(subjects) {
+  const seen = new Set(lsGet(LS_KEYS.seen, []));
+  const total = QUESTIONS_DATABASE.length;
+  const seenTotal = QUESTIONS_DATABASE.filter((q) => seen.has(q.id)).length;
+  const pct = total ? (seenTotal / total) * 100 : 0;
+  document.getElementById("coverage-overall-label").textContent =
+    `${seenTotal} / ${total} (${Math.round(pct)}%)`;
+  document.getElementById("coverage-overall-bar").style.width = Math.max(pct, seenTotal > 0 ? 3 : 0) + "%";
+
+  const bySubjectEl = document.getElementById("coverage-by-subject");
+  bySubjectEl.innerHTML = subjects
+    .map((s) => {
+      const qs = QUESTIONS_DATABASE.filter((q) => q.category === s);
+      const seenCount = qs.filter((q) => seen.has(q.id)).length;
+      const p = qs.length ? (seenCount / qs.length) * 100 : 0;
+      return `
+      <div>
+        <div class="flex justify-between text-xs mb-0.5">
+          <span class="truncate">${escapeHtml(s)}</span>
+          <span class="text-slate-400 whitespace-nowrap ml-2">${seenCount}/${qs.length}</span>
+        </div>
+        <div class="h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+          <div class="h-full bg-brand-400 rounded-full bar-min" style="width:${Math.max(p, seenCount > 0 ? 4 : 0)}%"></div>
+        </div>
+      </div>`;
+    })
+    .join("");
+}
+
+function renderHistory() {
+  const history = lsGet(LS_KEYS.history, []);
+  const emptyEl = document.getElementById("history-empty");
+  const listEl = document.getElementById("history-list");
+  const chartEl = document.getElementById("history-chart");
+
+  if (!history.length) {
+    emptyEl.classList.remove("hidden");
+    listEl.innerHTML = "";
+    chartEl.innerHTML = "";
+    document.getElementById("history-best").textContent = "–";
+    document.getElementById("history-avg").textContent = "–";
+    return;
+  }
+  emptyEl.classList.add("hidden");
+
+  const scores = history.map((h) => h.scorePct);
+  const best = Math.max(...scores);
+  const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+  document.getElementById("history-best").textContent = best + "%";
+  document.getElementById("history-avg").textContent = avg + "%";
+
+  const recent = history.slice(0, 15).reverse();
+  chartEl.innerHTML = recent
+    .map((h) => {
+      const heightPct = Math.max(h.scorePct, 4);
+      const color = h.scorePct >= 70 ? "bg-emerald-500" : h.scorePct >= 50 ? "bg-amber-500" : "bg-rose-500";
+      return `<div class="flex-1 ${color} rounded-t" style="height:${heightPct}%" title="${h.scorePct}% em ${formatDate(h.date)}"></div>`;
+    })
+    .join("");
+
+  listEl.innerHTML = history
+    .slice(0, 10)
+    .map(
+      (h) =>
+        `<div class="flex justify-between border-b border-slate-100 dark:border-slate-700 py-1">
+          <span>${formatDate(h.date)} · ${escapeHtml(h.mode)}</span>
+          <span class="font-medium">${h.correct}/${h.total} (${h.scorePct}%)</span>
+        </div>`
+    )
+    .join("");
+}
+
+function renderWeakPointsSummary() {
+  const weakIds = lsGet(LS_KEYS.weak, []);
+  const summaryEl = document.getElementById("weak-points-summary");
+  const btnEl = document.getElementById("btn-review-weak");
+  const validWeak = weakIds.filter((id) => QUESTIONS_DATABASE.some((q) => q.id === id));
+  if (validWeak.length) {
+    summaryEl.textContent = `Você tem ${validWeak.length} questão(ões) que já errou e ainda não acertou de novo.`;
+    btnEl.classList.remove("hidden");
+  } else {
+    summaryEl.textContent = "Você ainda não errou nenhuma questão que continue pendente. 🎉";
+    btnEl.classList.add("hidden");
+  }
+}
+
+function renderResumeBanner() {
+  const current = lsGet(LS_KEYS.current, null);
+  const banner = document.getElementById("resume-banner");
+  if (current && current.questions && current.questions.length) {
+    const answered = current.questions.filter((q) => q.answerIndex !== null).length;
+    document.getElementById("resume-banner-text").textContent =
+      `${answered} de ${current.questions.length} questões respondidas · modo ${current.mode === "tutor" ? "Tutor" : "Exame"}`;
+    banner.classList.remove("hidden");
+  } else {
+    banner.classList.add("hidden");
+  }
+}
+
+/* =========================================================================
+   7. INICIAR SIMULADO
+   ========================================================================= */
+function startQuiz(opts) {
+  const { subjects, qtd, mode, sessionCode, poolOverride, label } = opts;
+  const pool = poolOverride || QUESTIONS_DATABASE.filter((q) => subjects.includes(q.category));
+  if (!pool.length) {
+    toast("Nenhuma questão disponível para os critérios escolhidos.", "err");
+    return;
+  }
+  const rng = makeRng(sessionCode);
+  const seen = new Set(lsGet(LS_KEYS.seen, []));
+  const respectAntiRepeat = !sessionCode;
+
+  let chosen;
+  if (poolOverride) {
+    // pools de retentativa (erradas/marcadas/fracas): usa o pool inteiro, so embaralha ordem
+    chosen = pool.slice(0, qtd);
+    shuffleInPlace(chosen, rng);
+  } else {
+    chosen = sampleBalanced(pool, subjects, qtd, rng, seen, respectAntiRepeat);
+  }
+
+  if (!chosen.length) {
+    toast("Não foi possível montar o simulado com esses critérios.", "err");
+    return;
+  }
+
+  App.attempt = {
+    startedAt: Date.now(),
+    mode,
+    sessionCode: sessionCode || "",
+    subjects,
+    label: label || null,
+    questions: buildSessionQuestions(chosen, rng),
+    currentIndex: 0,
+    finished: false,
+  };
+  saveCurrentAttempt();
+  renderQuizQuestion();
+  showScreen("quiz");
+  startAutosave();
+}
+
+function startAutosave() {
+  if (App.autosaveTimer) clearInterval(App.autosaveTimer);
+  App.autosaveTimer = setInterval(saveCurrentAttempt, 1000);
+}
+function stopAutosave() {
+  if (App.autosaveTimer) clearInterval(App.autosaveTimer);
+  App.autosaveTimer = null;
+}
+function saveCurrentAttempt() {
+  if (App.currentScreen !== "quiz" || !App.attempt || App.attempt.finished) return;
+  lsSet(LS_KEYS.current, App.attempt);
+}
+
+/* =========================================================================
+   8. TELA DE QUESTAO
+   ========================================================================= */
+function currentQuestion() {
+  return App.attempt.questions[App.attempt.currentIndex];
+}
+
+function renderQuizDots() {
+  const dotsEl = document.getElementById("quiz-dots");
+  dotsEl.innerHTML = App.attempt.questions
+    .map((q, i) => {
+      const answered = q.answerIndex !== null;
+      const isCurrent = i === App.attempt.currentIndex;
+      const base = "dot rounded-full flex items-center justify-center text-[9px] font-bold cursor-pointer border";
+      const color = answered
+        ? "bg-emerald-500 border-emerald-500 text-white"
+        : "bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-500";
+      const ring = isCurrent ? "ring-2 ring-offset-1 ring-brand-500 dark:ring-offset-slate-900" : "";
+      return `<button type="button" data-idx="${i}" class="quiz-dot-btn ${base} ${color} ${ring}" title="Questão ${i + 1}"></button>`;
+    })
+    .join("");
+  dotsEl.querySelectorAll(".quiz-dot-btn").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      App.attempt.currentIndex = Number(btn.dataset.idx);
+      renderQuizQuestion();
+    })
+  );
+}
+
+function renderQuizQuestion() {
+  const q = currentQuestion();
+  const total = App.attempt.questions.length;
+  const idx = App.attempt.currentIndex;
+
+  document.getElementById("quiz-progress-label").textContent = `${idx + 1} / ${total}`;
+  const answeredCount = App.attempt.questions.filter((x) => x.answerIndex !== null).length;
+  document.getElementById("quiz-progress-bar").style.width = Math.max((answeredCount / total) * 100, 2) + "%";
+
+  document.getElementById("q-category").textContent = q.category;
+  document.getElementById("q-difficulty").textContent = q.difficulty;
+  document.getElementById("q-code").textContent = q.code;
+  document.getElementById("q-prompt").textContent = q.prompt;
+
+  document.getElementById("mark-label").textContent = q.marked ? "Marcada" : "Marcar";
+  document.getElementById("btn-mark-review").className =
+    "ml-auto px-2 py-1 rounded-full border hover:bg-slate-100 dark:hover:bg-slate-700 " +
+    (q.marked
+      ? "border-amber-400 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
+      : "border-slate-300 dark:border-slate-600");
+
+  const hintBox = document.getElementById("q-hint-box");
+  document.getElementById("q-hint-text").textContent = q.clinicalPointers;
+  hintBox.classList.toggle("hidden", !q.hintShown);
+
+  const isTutor = App.attempt.mode === "tutor";
+  const isAnswered = q.answerIndex !== null;
+  const revealAnswer = isAnswered && isTutor;
+
+  const optionsEl = document.getElementById("q-options");
+  const letters = ["A", "B", "C", "D"];
+  optionsEl.innerHTML = q.options
+    .map((opt, i) => {
+      const isStruck = q.struck.includes(i);
+      const isSelected = q.answerIndex === i;
+      let stateClasses = "border-slate-300 dark:border-slate-600 hover:border-brand-400 dark:hover:bg-slate-700/50";
+      if (revealAnswer) {
+        if (opt.isCorrect) stateClasses = "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30";
+        else if (isSelected) stateClasses = "border-rose-500 bg-rose-50 dark:bg-rose-900/30";
+        else stateClasses = "border-slate-200 dark:border-slate-700 opacity-70";
+      } else if (isSelected) {
+        stateClasses = "border-brand-500 bg-brand-50 dark:bg-brand-900/30";
+      }
+      const disabledAttr = revealAnswer ? "disabled" : "";
+      return `
+      <div class="option-btn flex items-stretch gap-2 ${isStruck ? "struck" : ""}">
+        <button type="button" data-idx="${i}" ${disabledAttr}
+          class="option-select flex-1 flex items-start gap-3 text-left border rounded-lg p-3 transition-colors ${stateClasses}">
+          <span class="shrink-0 w-7 h-7 rounded-full border border-current flex items-center justify-center text-xs font-bold">${letters[i]}</span>
+          <span class="opt-text text-sm leading-relaxed pt-0.5">${escapeHtml(opt.text)}</span>
+        </button>
+        <button type="button" data-idx="${i}" title="Riscar alternativa"
+          class="strike-btn shrink-0 w-9 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-400 hover:text-rose-500 hover:border-rose-300 text-sm">Ａ̶</button>
+      </div>
+      ${
+        revealAnswer
+          ? `<p class="text-xs pl-10 -mt-1.5 mb-2 ${opt.isCorrect ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500 dark:text-slate-400"}">${escapeHtml(opt.rationale)}</p>`
+          : ""
+      }`;
+    })
+    .join("");
+
+  optionsEl.querySelectorAll(".option-select").forEach((btn) =>
+    btn.addEventListener("click", () => selectOption(Number(btn.dataset.idx)))
+  );
+  optionsEl.querySelectorAll(".strike-btn").forEach((btn) =>
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleStrike(Number(btn.dataset.idx));
+    })
+  );
+
+  const feedbackBox = document.getElementById("q-feedback-box");
+  if (revealAnswer) {
+    const correct = q.options[q.answerIndex].isCorrect;
+    feedbackBox.classList.remove("hidden");
+    feedbackBox.className =
+      "mb-4 rounded-lg border p-3 text-sm font-medium " +
+      (correct
+        ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+        : "border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300");
+    feedbackBox.textContent = correct ? "✅ Você acertou!" : "❌ Você errou.";
+  } else {
+    feedbackBox.classList.add("hidden");
+  }
+
+  document.getElementById("btn-prev").disabled = idx === 0;
+  document.getElementById("btn-prev").classList.toggle("opacity-40", idx === 0);
+  const isLast = idx === total - 1;
+  document.getElementById("btn-next").classList.toggle("hidden", isLast);
+  document.getElementById("btn-finish").classList.toggle("hidden", !isLast);
+
+  renderQuizDots();
+  saveCurrentAttempt();
+}
+
+function selectOption(i) {
+  const q = currentQuestion();
+  if (App.attempt.mode === "tutor" && q.answerIndex !== null) return; // trava apos responder no modo tutor
+  q.answerIndex = i;
+  renderQuizQuestion();
+}
+
+function toggleStrike(i) {
+  const q = currentQuestion();
+  const pos = q.struck.indexOf(i);
+  if (pos >= 0) q.struck.splice(pos, 1);
+  else q.struck.push(i);
+  renderQuizQuestion();
+}
+
+function goPrev() {
+  if (App.attempt.currentIndex > 0) {
+    App.attempt.currentIndex--;
+    renderQuizQuestion();
+  }
+}
+function goNext() {
+  if (App.attempt.currentIndex < App.attempt.questions.length - 1) {
+    App.attempt.currentIndex++;
+    renderQuizQuestion();
+  }
+}
+
+function confirmQuitQuiz() {
+  const unanswered = App.attempt.questions.filter((q) => q.answerIndex === null).length;
+  if (unanswered > 0) {
+    const ok = confirm(`Você tem ${unanswered} questão(ões) não respondida(s). Deseja encerrar o simulado mesmo assim?`);
+    if (!ok) return;
+  } else {
+    const ok = confirm("Deseja encerrar o simulado agora?");
+    if (!ok) return;
+  }
+  finishQuiz();
+}
+
+/* =========================================================================
+   9. FINALIZAR E GRADE
+   ========================================================================= */
+function finishQuiz() {
+  stopAutosave();
+  App.attempt.finished = true;
+  App.attempt.finishedAt = Date.now();
+
+  const questions = App.attempt.questions;
+  const answered = questions.filter((q) => q.answerIndex !== null);
+  const correct = answered.filter((q) => q.options[q.answerIndex].isCorrect);
+  const wrong = answered.filter((q) => !q.options[q.answerIndex].isCorrect);
+  const totalTimeMs = App.attempt.finishedAt - App.attempt.startedAt;
+  const avgTimeMs = answered.length ? totalTimeMs / answered.length : 0;
+  const scorePct = questions.length ? Math.round((correct.length / questions.length) * 100) : 0;
+
+  const bySubject = {};
+  questions.forEach((q) => {
+    if (!bySubject[q.category]) bySubject[q.category] = { correct: 0, total: 0 };
+    bySubject[q.category].total++;
+    if (q.answerIndex !== null && q.options[q.answerIndex].isCorrect) bySubject[q.category].correct++;
+  });
+
+  App.lastGraded = {
+    questions, correct, wrong, answered, totalTimeMs, avgTimeMs, scorePct, bySubject,
+    mode: App.attempt.mode,
+  };
+
+  // atualizar seenIds
+  const seen = new Set(lsGet(LS_KEYS.seen, []));
+  questions.forEach((q) => seen.add(q.id));
+  lsSet(LS_KEYS.seen, Array.from(seen));
+
+  // atualizar pontos fracos
+  let weak = new Set(lsGet(LS_KEYS.weak, []));
+  answered.forEach((q) => {
+    const isCorrect = q.options[q.answerIndex].isCorrect;
+    if (!isCorrect) weak.add(q.id);
+    else weak.delete(q.id);
+  });
+  lsSet(LS_KEYS.weak, Array.from(weak));
+
+  // historico
+  const history = lsGet(LS_KEYS.history, []);
+  history.unshift({
+    date: Date.now(),
+    mode: App.attempt.mode === "tutor" ? "Tutor" : "Exame",
+    total: questions.length,
+    correct: correct.length,
+    wrong: wrong.length,
+    scorePct,
+    totalTimeMs,
+  });
+  lsSet(LS_KEYS.history, history.slice(0, HISTORY_MAX));
+
+  localStorage.removeItem(LS_KEYS.current);
+
+  renderResults();
+  showScreen("results");
+}
+
+function renderResults() {
+  const g = App.lastGraded;
+  document.getElementById("result-score").textContent = g.scorePct + "%";
+  document.getElementById("result-summary-text").textContent =
+    `${g.correct.length} acertos em ${g.questions.length} questões respondidas de ${g.questions.length} apresentadas`;
+  document.getElementById("result-correct").textContent = g.correct.length;
+  document.getElementById("result-wrong").textContent = g.wrong.length;
+  document.getElementById("result-time-total").textContent = formatTime(g.totalTimeMs);
+  document.getElementById("result-time-avg").textContent = formatTime(g.avgTimeMs);
+
+  const bySubjectEl = document.getElementById("result-by-subject");
+  const entries = Object.entries(g.bySubject).sort((a, b) => a[0].localeCompare(b[0], "pt-BR"));
+  bySubjectEl.innerHTML = entries
+    .map(([subject, stat]) => {
+      const pct = stat.total ? Math.round((stat.correct / stat.total) * 100) : 0;
+      const color = pct >= 70 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-500" : "bg-rose-500";
+      return `
+      <div>
+        <div class="flex justify-between text-sm mb-1">
+          <span>${escapeHtml(subject)}</span>
+          <span class="font-medium">${stat.correct}/${stat.total} (${pct}%)</span>
+        </div>
+        <div class="h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+          <div class="h-full ${color} rounded-full bar-min" style="width:${Math.max(pct, 3)}%"></div>
+        </div>
+      </div>`;
+    })
+    .join("");
+
+  const weakButton = document.getElementById("btn-retry-weak");
+  const weakIds = lsGet(LS_KEYS.weak, []).filter((id) => QUESTIONS_DATABASE.some((q) => q.id === id));
+  weakButton.disabled = !weakIds.length;
+  weakButton.classList.toggle("opacity-40", !weakIds.length);
+  weakButton.classList.toggle("cursor-not-allowed", !weakIds.length);
+
+  const wrongBtn = document.getElementById("btn-retry-wrong");
+  wrongBtn.disabled = !g.wrong.length;
+  wrongBtn.classList.toggle("opacity-40", !g.wrong.length);
+
+  const markedCount = g.questions.filter((q) => q.marked).length;
+  const markedBtn = document.getElementById("btn-retry-marked");
+  markedBtn.disabled = !markedCount;
+  markedBtn.classList.toggle("opacity-40", !markedCount);
+}
+
+/* =========================================================================
+   10. REVISAO DETALHADA
+   ========================================================================= */
+function renderReview() {
+  const g = App.lastGraded;
+  const filter = App.reviewFilter;
+  let list = g.questions;
+  if (filter === "wrong") {
+    list = list.filter((q) => q.answerIndex === null || !q.options[q.answerIndex].isCorrect);
+  } else if (filter === "marked") {
+    list = list.filter((q) => q.marked);
+  }
+
+  const letters = ["A", "B", "C", "D"];
+  const listEl = document.getElementById("review-list");
+  if (!list.length) {
+    listEl.innerHTML = `<p class="text-center text-slate-400 py-10">Nenhuma questão nesse filtro.</p>`;
+    return;
+  }
+
+  listEl.innerHTML = list
+    .map((q, qi) => {
+      const wasAnswered = q.answerIndex !== null;
+      const wasCorrect = wasAnswered && q.options[q.answerIndex].isCorrect;
+      const badge = !wasAnswered
+        ? `<span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 text-xs">Não respondida</span>`
+        : wasCorrect
+        ? `<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 text-xs">Acertou</span>`
+        : `<span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 text-xs">Errou</span>`;
+
+      const optionsHtml = q.options
+        .map((opt, i) => {
+          const isUserChoice = q.answerIndex === i;
+          let cls = "border-slate-200 dark:border-slate-700";
+          if (opt.isCorrect) cls = "border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20";
+          else if (isUserChoice) cls = "border-rose-400 bg-rose-50 dark:bg-rose-900/20";
+          return `
+          <div class="border rounded-lg p-2.5 ${cls}">
+            <div class="flex items-start gap-2 text-sm">
+              <span class="shrink-0 w-6 h-6 rounded-full border border-current flex items-center justify-center text-xs font-bold">${letters[i]}</span>
+              <div class="flex-1">
+                <p>${escapeHtml(opt.text)} ${opt.isCorrect ? "✅" : isUserChoice ? "❌ (sua resposta)" : ""}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${escapeHtml(opt.rationale)}</p>
+              </div>
+            </div>
+          </div>`;
+        })
+        .join("");
+
+      return `
+      <div class="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 sm:p-5">
+        <div class="flex flex-wrap items-center gap-2 mb-2 text-xs">
+          <span class="px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/50 dark:text-brand-300 font-medium">${escapeHtml(q.category)}</span>
+          <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400 font-mono">${escapeHtml(q.code)}</span>
+          ${q.marked ? `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">🏳️ Marcada</span>` : ""}
+          ${badge}
+        </div>
+        <p class="font-medium mb-3">${qi + 1}. ${escapeHtml(q.prompt)}</p>
+        <div class="space-y-2 mb-3">${optionsHtml}</div>
+        <div class="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 p-2.5 text-xs text-amber-700 dark:text-amber-300">
+          💡 ${escapeHtml(q.clinicalPointers)}
+        </div>
+      </div>`;
+    })
+    .join("");
+}
+
+/* =========================================================================
+   11. RETENTATIVAS (modal)
+   ========================================================================= */
+let pendingRetry = null;
+function openRetryModal(kind) {
+  const g = App.lastGraded;
+  let pool = [];
+  let title = "";
+  let desc = "";
+  if (kind === "wrong") {
+    pool = g.wrong.map((wq) => QUESTIONS_DATABASE.find((q) => q.id === wq.id)).filter(Boolean);
+    title = "Refazer questões erradas";
+    desc = `Você errou ${pool.length} questão(ões) nesta tentativa.`;
+  } else if (kind === "marked") {
+    pool = g.questions.filter((q) => q.marked).map((mq) => QUESTIONS_DATABASE.find((q) => q.id === mq.id)).filter(Boolean);
+    title = "Refazer questões marcadas";
+    desc = `Você marcou ${pool.length} questão(ões) para revisão.`;
+  } else if (kind === "weak") {
+    const weakIds = lsGet(LS_KEYS.weak, []);
+    pool = QUESTIONS_DATABASE.filter((q) => weakIds.includes(q.id));
+    title = "Foco nos pontos fracos";
+    desc = `Você tem ${pool.length} questão(ões) que ainda não acertou depois de errar.`;
+  }
+  if (!pool.length) {
+    toast("Não há questões suficientes para essa opção.", "err");
+    return;
+  }
+  pendingRetry = { kind, pool };
+  document.getElementById("modal-retry-title").textContent = title;
+  document.getElementById("modal-retry-desc").textContent = desc;
+  const qtdInput = document.getElementById("modal-retry-qtd");
+  qtdInput.max = pool.length;
+  qtdInput.value = pool.length;
+  document.getElementById("modal-retry").classList.remove("hidden");
+}
+function closeRetryModal() {
+  document.getElementById("modal-retry").classList.add("hidden");
+  pendingRetry = null;
+}
+function confirmRetryModal() {
+  if (!pendingRetry) return;
+  let qtd = Number(document.getElementById("modal-retry-qtd").value) || pendingRetry.pool.length;
+  qtd = Math.max(1, Math.min(qtd, pendingRetry.pool.length));
+  const kindLabels = { wrong: "Erradas", marked: "Marcadas", weak: "Pontos fracos" };
+  const mode = document.querySelector('input[name="mode"]:checked')?.value || "exame";
+  closeRetryModal();
+  startQuiz({
+    subjects: uniqueSubjects(),
+    qtd,
+    mode,
+    sessionCode: "",
+    poolOverride: pendingRetry.pool,
+    label: kindLabels[pendingRetry.kind],
+  });
+}
+
+/* =========================================================================
+   12. EXPORTAR RESULTADOS COMO PAGINA STANDALONE
+   ========================================================================= */
+function exportResultsPage() {
+  const g = App.lastGraded;
+  const entries = Object.entries(g.bySubject).sort((a, b) => a[0].localeCompare(b[0], "pt-BR"));
+  const rowsHtml = entries
+    .map(([subject, stat]) => {
+      const pct = stat.total ? Math.round((stat.correct / stat.total) * 100) : 0;
+      const color = pct >= 70 ? "#10b981" : pct >= 50 ? "#f59e0b" : "#f43f5e";
+      return `
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px;">
+          <span>${escapeHtml(subject)}</span><span><b>${stat.correct}/${stat.total}</b> (${pct}%)</span>
+        </div>
+        <div style="height:10px;border-radius:6px;background:#e2e8f0;overflow:hidden;">
+          <div style="height:100%;width:${Math.max(pct, 3)}%;background:${color};border-radius:6px;"></div>
+        </div>
+      </div>`;
+    })
+    .join("");
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<title>Resultado — Simulado de Farmacologia Clínica</title>
+<style>
+  body { font-family: ui-sans-serif, system-ui, Arial, sans-serif; background:#f8fafc; color:#1e293b; margin:0; padding:32px 16px; }
+  .card { max-width: 680px; margin: 0 auto; background:white; border-radius:16px; padding:32px; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
+  .hero { text-align:center; background:linear-gradient(135deg,#2563eb,#1e3a8a); color:white; border-radius:14px; padding:28px; margin-bottom:24px; }
+  .hero .score { font-size:48px; font-weight:800; margin:4px 0; }
+  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:28px; }
+  .stat { text-align:center; background:#f1f5f9; border-radius:10px; padding:12px 6px; }
+  .stat b { display:block; font-size:20px; color:#2563eb; }
+  .stat span { font-size:11px; color:#64748b; }
+  h2 { font-size:16px; margin-bottom:14px; }
+  .printbtn { display:block; width:100%; margin-top:20px; padding:12px; border:none; border-radius:10px; background:#1e293b; color:white; font-size:15px; cursor:pointer; }
+  @media print { .printbtn { display:none; } body { background:white; padding:0; } .card { box-shadow:none; } }
+</style></head>
+<body>
+  <div class="card">
+    <div class="hero">
+      <div style="font-size:12px;letter-spacing:1px;opacity:.85;">RESULTADO — SIMULADO DE FARMACOLOGIA CLÍNICA</div>
+      <div class="score">${g.scorePct}%</div>
+      <div style="font-size:13px;opacity:.9;">${g.correct.length} acertos de ${g.questions.length} questões · ${formatDate(Date.now())}</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>${g.correct.length}</b><span>Acertos</span></div>
+      <div class="stat"><b>${g.wrong.length}</b><span>Erros</span></div>
+      <div class="stat"><b>${formatTime(g.totalTimeMs)}</b><span>Tempo total</span></div>
+      <div class="stat"><b>${formatTime(g.avgTimeMs)}</b><span>Tempo médio</span></div>
+    </div>
+    <h2>Desempenho por assunto</h2>
+    ${rowsHtml}
+    <button class="printbtn" onclick="window.print()">🖨️ Imprimir / salvar como PDF</button>
+  </div>
+</body></html>`;
+
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
+}
+
+/* =========================================================================
+   13. EXPORT / IMPORT DE PROGRESSO
+   ========================================================================= */
+function exportProgress() {
+  const data = {
+    seenIds: lsGet(LS_KEYS.seen, []),
+    history: lsGet(LS_KEYS.history, []),
+    weakIds: lsGet(LS_KEYS.weak, []),
+    exportedAt: Date.now(),
+    version: 1,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `progresso-farmacologia-clinica-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast("Progresso exportado.", "ok");
+}
+
+let pendingImportData = null;
+function handleImportFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!data || typeof data !== "object") throw new Error("formato inválido");
+      pendingImportData = data;
+      document.getElementById("modal-import").classList.remove("hidden");
+    } catch (e) {
+      toast("Arquivo de progresso inválido.", "err");
+    }
+  };
+  reader.readAsText(file);
+}
+function applyImport(mode) {
+  if (!pendingImportData) return;
+  const d = pendingImportData;
+  if (mode === "replace") {
+    lsSet(LS_KEYS.seen, d.seenIds || []);
+    lsSet(LS_KEYS.history, (d.history || []).slice(0, HISTORY_MAX));
+    lsSet(LS_KEYS.weak, d.weakIds || []);
+  } else {
+    const seen = new Set(lsGet(LS_KEYS.seen, []));
+    (d.seenIds || []).forEach((id) => seen.add(id));
+    lsSet(LS_KEYS.seen, Array.from(seen));
+
+    const weak = new Set(lsGet(LS_KEYS.weak, []));
+    (d.weakIds || []).forEach((id) => weak.add(id));
+    lsSet(LS_KEYS.weak, Array.from(weak));
+
+    const history = lsGet(LS_KEYS.history, []);
+    const merged = history.concat(d.history || []).sort((a, b) => b.date - a.date);
+    lsSet(LS_KEYS.history, merged.slice(0, HISTORY_MAX));
+  }
+  pendingImportData = null;
+  document.getElementById("modal-import").classList.add("hidden");
+  toast("Progresso importado.", "ok");
+  renderHome();
+}
+
+/* =========================================================================
+   14. MODO ESCURO
+   ========================================================================= */
+function applyDarkMode(on) {
+  document.body.style.filter = on ? "invert(1) hue-rotate(180deg)" : "";
+  document.getElementById("btn-dark-mode").textContent = on ? "☀️" : "🌙";
+  lsSet(LS_KEYS.dark, on);
+}
+function toggleDarkMode() {
+  applyDarkMode(!lsGet(LS_KEYS.dark, false));
+}
+
+/* =========================================================================
+   15. LINK DE CONVITE / QUERY PARAMS
+   ========================================================================= */
+function copyInviteLink() {
+  const code = document.getElementById("input-session-code").value.trim();
+  const subjects = getSelectedSubjects();
+  const qtd = document.getElementById("input-qtd").value;
+  const url = new URL(location.href);
+  url.search = "";
+  if (code) url.searchParams.set("codigo", code);
+  url.searchParams.set("assuntos", subjects.map((s) => encodeURIComponent(s)).join(","));
+  url.searchParams.set("qtd", qtd);
+  navigator.clipboard
+    .writeText(url.toString())
+    .then(() => toast("Link de convite copiado!", "ok"))
+    .catch(() => toast("Não foi possível copiar automaticamente. Copie manualmente: " + url.toString(), "err"));
+}
+
+function applyQueryParams() {
+  const params = new URLSearchParams(location.search);
+  const codigo = params.get("codigo");
+  const qtd = params.get("qtd");
+  if (codigo) document.getElementById("input-session-code").value = codigo;
+  if (qtd) document.getElementById("input-qtd").value = qtd;
+}
+
+/* =========================================================================
+   16. INICIALIZACAO / EVENT LISTENERS
+   ========================================================================= */
+function init() {
+  applyDarkMode(lsGet(LS_KEYS.dark, false));
+  renderHome();
+  applyQueryParams();
+
+  document.getElementById("btn-select-all-subjects").addEventListener("click", () => {
+    document.querySelectorAll(".subject-checkbox").forEach((cb) => (cb.checked = true));
+    updateQtdMaxLabel();
+  });
+  document.getElementById("btn-select-none-subjects").addEventListener("click", () => {
+    document.querySelectorAll(".subject-checkbox").forEach((cb) => (cb.checked = false));
+    updateQtdMaxLabel();
+  });
+
+  document.getElementById("form-setup").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const subjects = getSelectedSubjects();
+    if (!subjects.length) {
+      toast("Selecione pelo menos um assunto.", "err");
+      return;
+    }
+    const qtd = Math.max(1, Number(document.getElementById("input-qtd").value) || 1);
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    const sessionCode = document.getElementById("input-session-code").value.trim();
+    startQuiz({ subjects, qtd, mode, sessionCode });
+  });
+
+  document.getElementById("btn-copy-invite").addEventListener("click", copyInviteLink);
+
+  document.getElementById("btn-resume").addEventListener("click", () => {
+    const saved = lsGet(LS_KEYS.current, null);
+    if (!saved) return;
+    App.attempt = saved;
+    renderQuizQuestion();
+    showScreen("quiz");
+    startAutosave();
+  });
+  document.getElementById("btn-discard-resume").addEventListener("click", () => {
+    if (!confirm("Descartar o simulado em andamento?")) return;
+    localStorage.removeItem(LS_KEYS.current);
+    renderResumeBanner();
+    toast("Simulado descartado.", "info");
+  });
+
+  document.getElementById("btn-review-weak").addEventListener("click", () => {
+    const weakIds = lsGet(LS_KEYS.weak, []);
+    const pool = QUESTIONS_DATABASE.filter((q) => weakIds.includes(q.id));
+    if (!pool.length) return;
+    const mode = document.querySelector('input[name="mode"]:checked')?.value || "exame";
+    startQuiz({ subjects: uniqueSubjects(), qtd: pool.length, mode, sessionCode: "", poolOverride: pool, label: "Pontos fracos" });
+  });
+
+  // Quiz
+  document.getElementById("btn-hint").addEventListener("click", () => {
+    const q = currentQuestion();
+    q.hintShown = !q.hintShown;
+    renderQuizQuestion();
+  });
+  document.getElementById("btn-mark-review").addEventListener("click", () => {
+    const q = currentQuestion();
+    q.marked = !q.marked;
+    renderQuizQuestion();
+  });
+  document.getElementById("btn-prev").addEventListener("click", goPrev);
+  document.getElementById("btn-next").addEventListener("click", goNext);
+  document.getElementById("btn-finish").addEventListener("click", () => {
+    const unanswered = App.attempt.questions.filter((q) => q.answerIndex === null).length;
+    if (unanswered > 0) {
+      if (!confirm(`Você tem ${unanswered} questão(ões) não respondida(s). Deseja finalizar mesmo assim?`)) return;
+    }
+    finishQuiz();
+  });
+  document.getElementById("btn-quit-quiz").addEventListener("click", confirmQuitQuiz);
+
+  // Results
+  document.getElementById("btn-review-all").addEventListener("click", () => {
+    App.reviewFilter = "all";
+    document.querySelectorAll(".review-filter-btn").forEach((b) => {
+      b.classList.toggle("bg-brand-600", b.dataset.filter === "all");
+      b.classList.toggle("text-white", b.dataset.filter === "all");
+    });
+    renderReview();
+    showScreen("review");
+  });
+  document.getElementById("btn-retry-wrong").addEventListener("click", () => openRetryModal("wrong"));
+  document.getElementById("btn-retry-marked").addEventListener("click", () => openRetryModal("marked"));
+  document.getElementById("btn-retry-weak").addEventListener("click", () => openRetryModal("weak"));
+  document.getElementById("btn-export-results-page").addEventListener("click", exportResultsPage);
+  document.getElementById("btn-back-home").addEventListener("click", () => {
+    renderHome();
+    showScreen("home");
+  });
+
+  document.getElementById("modal-retry-cancel").addEventListener("click", closeRetryModal);
+  document.getElementById("modal-retry-confirm").addEventListener("click", confirmRetryModal);
+
+  // Review
+  document.querySelectorAll(".review-filter-btn").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      App.reviewFilter = btn.dataset.filter;
+      document.querySelectorAll(".review-filter-btn").forEach((b) => {
+        const active = b === btn;
+        b.classList.toggle("bg-brand-600", active);
+        b.classList.toggle("text-white", active);
+      });
+      renderReview();
+    })
+  );
+  document.getElementById("btn-review-back").addEventListener("click", () => {
+    renderResults();
+    showScreen("results");
+  });
+
+  // Export/import progress
+  document.getElementById("btn-export-progress").addEventListener("click", exportProgress);
+  document.getElementById("input-import-progress").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) handleImportFile(file);
+    e.target.value = "";
+  });
+  document.getElementById("modal-import-merge").addEventListener("click", () => applyImport("merge"));
+  document.getElementById("modal-import-replace").addEventListener("click", () => applyImport("replace"));
+  document.getElementById("modal-import-cancel").addEventListener("click", () => {
+    pendingImportData = null;
+    document.getElementById("modal-import").classList.add("hidden");
+  });
+
+  document.getElementById("btn-dark-mode").addEventListener("click", toggleDarkMode);
+
+  window.addEventListener("beforeunload", () => {
+    if (App.currentScreen === "quiz" && App.attempt && !App.attempt.finished) saveCurrentAttempt();
+  });
+}
+
+document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
